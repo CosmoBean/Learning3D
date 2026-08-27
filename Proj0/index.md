@@ -26,7 +26,9 @@ This is a **Bulbasaur** 3D model, a pokemon with 3D shape in a mesh geometry.
 
 ## Task 3: Funny GIF
 
-![Cat thinking — "Lemme Think" GIF](images/funny-cat.gif)
+My state as i go through my masters at CMU :)
+
+![Cat thinking "Lemme Think" GIF](images/funny-cat.gif)
 
 **Source:** [Lemme Think GIF on GIPHY](https://giphy.com/gifs/cats-memes-funny-cat-pY8jLmZw0ElqvVeRH4) by [@brown_giphy](https://giphy.com/brown_giphy)
 
