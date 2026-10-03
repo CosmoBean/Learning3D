@@ -1,120 +1,97 @@
-# 16-825 Assignment 2: Single View to 3D
+# 16-825 Assignment 2
 
 **AndrewId**: sbandred
 
 **Name:** Sri Datta Bandreddi
 
-All training and evaluation ran on one H100 (PyTorch 2.14 / CUDA 13.0, PyTorch3D 0.7.9 built from source).
-The image encoder (ResNet18) is trained end to end from the raw images; **`--load_feat` was not used**.
+Trained on one H100 (PyTorch 2.14, PyTorch3D 0.7.9). The ResNet18 encoder is trained end to end from the images; `--load_feat` was not used.
 
-## 1. Exploring loss functions
-
-Each fit starts from a random voxel grid / random point cloud / level-4 ico-sphere and optimizes it directly
-against one chair from the training set (Adam, lr 4e-4). In every gif the **fitted result is on the left and the target on the right**.
-
-### 1.1 Fitting a voxel grid
-
-Binary cross-entropy on occupancy logits (`F.binary_cross_entropy_with_logits`); the grid is shown after a sigmoid,
-meshed with marching cubes at 0.5. 10k iterations, final loss 0.067.
+## 1.1 Fitting a voxel grid
+Optimize a random 32³ grid toward a target chair with binary cross-entropy on the occupancy logits (10k iterations). Left: fitted, right: target.
 
 ![voxel fit](output/q1_vox.gif)
 
-### 1.2 Fitting a point cloud
-
-Chamfer loss written from scratch: for each point the squared distance to its nearest neighbour in the other cloud
-(`knn_points`), averaged, in both directions. 5000 points, 20k iterations.
+## 1.2 Fitting a point cloud
+Optimize 5000 random points toward the target with a chamfer loss written from scratch: the squared distance from each point to its nearest neighbour in the other cloud, averaged in both directions (20k iterations). Left: fitted, right: target.
 
 ![point cloud fit](output/q1_point.gif)
 
-### 1.3 Fitting a mesh
-
-Chamfer on 5000 points sampled from both surfaces + 0.1 × uniform Laplacian smoothing, 10k iterations.
-The sphere cannot change genus, so it stretches thin webs between the legs instead of opening holes.
+## 1.3 Fitting a mesh
+Deform an ico-sphere toward the target with chamfer on 5000 sampled points plus 0.1 × Laplacian smoothing (10k iterations). Left: fitted, right: target. The sphere can't grow holes, so it stretches thin webs between the legs.
 
 ![mesh fit](output/q1_mesh.gif)
 
-## 2. Reconstructing 3D from single view
+## 2. Single view to 3D: setup
+ResNet18 (ImageNet weights) turns the image into a 512-d feature, and a decoder per representation turns that into 3D. Adam, lr 4e-4, batch 32, 8 data workers. Each model was trained to 10k steps, then resumed to 20k, and the better checkpoint is reported. The test set is 678 chairs with the view fixed by seed 21, so every model sees the same inputs. Each picture below is **input | prediction | ground-truth mesh**, for the same three test chairs.
 
-Shared setup: ResNet18 (ImageNet weights) encodes the image to a 512-d feature; a decoder per representation.
-Adam, lr 4e-4, batch 32. Each model was trained for 10k steps (~52 epochs over the 6100 training chairs, one random
-view each time), then resumed to 20k steps; the better of the two checkpoints is reported (see the table at the end of 2.3).
-Evaluation is over the 678 test chairs with the test view fixed by `seed 21`, so all three models see identical inputs.
-
-Each row below: **input RGB | prediction | ground-truth mesh**, for the same three test chairs (#0, #400, #100).
-
-### 2.1 Image to voxel grid
-
-Decoder: linear 512 → 256×4³, then three `ConvTranspose3d` + BatchNorm + ReLU blocks (4³ → 8³ → 16³ → 32³) and a
-final 3³ conv to one logit per voxel. Trained with the BCE loss from 1.1.
+## 2.1 Image to voxel grid
+Decoder:
+```
+Linear 512→16384, ReLU                    → reshaped to 256×4×4×4
+ConvTranspose3d 256→128, k4 s2, BN, ReLU  → 128×8×8×8
+ConvTranspose3d 128→64,  k4 s2, BN, ReLU  → 64×16×16×16
+ConvTranspose3d 64→32,   k4 s2, BN, ReLU  → 32×32×32×32
+Conv3d 32→1, k3                           → 1×32×32×32 logits
+```
 
 **F1@0.05 = 70.3** (20k steps)
 
-![](vis/0_vox.png)
-![](vis/400_vox.png)
-![](vis/100_vox.png)
+![vox 0](vis/0_vox.png)
+![vox 400](vis/400_vox.png)
+![vox 100](vis/100_vox.png)
 
 ![F1 vox](eval_vox.png)
 
-The last row is the typical failure: thin-framed chairs. Only a few percent of voxels are occupied, so for thin parts
-"empty" is the cheaper guess under BCE. At 10k steps this was severe: 28 of 678 test chairs had no voxel above 0.5
-(no surface for marching cubes, scored F1 = 0) and F1 was 58.6. Training to 20k removed every empty prediction and
-added legs on chairs like the second row, but thin metal frames still come out as fragments.
+Thin chairs (last row) are the hard case. Only a few percent of voxels are filled, so "empty" is the cheap guess for thin parts. At 10k steps, 28 test chairs came out completely empty and F1 was 58.6; at 20k, none are empty, but thin metal frames are still fragments.
 
-### 2.2 Image to point cloud
-
-Decoder: MLP 512 → 1024 → 1024 → 1000×3 with `tanh` on the output. Trained with the chamfer loss from 1.2
-against 1000 points sampled from the GT mesh.
+## 2.2 Image to point cloud
+Decoder:
+```
+Linear 512→1024, ReLU
+Linear 1024→1024, ReLU
+Linear 1024→3000, tanh                    → reshaped to 1000×3 points
+```
 
 **F1@0.05 = 79.9** (10k steps)
 
-![](vis/0_point.png)
-![](vis/400_point.png)
-![](vis/100_point.png)
+![point 0](vis/0_point.png)
+![point 400](vis/400_point.png)
+![point 100](vis/100_point.png)
 
 ![F1 point](eval_point.png)
 
-### 2.3 Image to mesh
-
-Decoder: MLP 512 → 1024 → 1024 → 2562×3, predicting a per-vertex offset for a level-4 ico-sphere.
-Loss: chamfer (1000 points) + 0.1 × Laplacian smoothing.
+## 2.3 Image to mesh
+Decoder:
+```
+Linear 512→1024, ReLU
+Linear 1024→1024, ReLU
+Linear 1024→7686                          → reshaped to 2562×3 vertex offsets
+```
+The offsets move the vertices of a level-4 ico-sphere. Loss: chamfer on 1000 points + 0.1 × Laplacian smoothing.
 
 **F1@0.05 = 73.2** (20k steps)
 
-![](vis/0_mesh.png)
-![](vis/400_mesh.png)
-![](vis/100_mesh.png)
+![mesh 0](vis/0_mesh.png)
+![mesh 400](vis/400_mesh.png)
+![mesh 100](vis/100_mesh.png)
 
 ![F1 mesh](eval_mesh.png)
 
-**Comparison.**
+**Comparison:**
 
 | Representation | F1@0.05 at 10k steps | F1@0.05 at 20k steps |
 |---|---|---|
 | Point cloud | **79.9** | 79.0 |
 | Mesh | 71.1 | **73.2** |
-| Voxel grid (32³) | 58.6 | **70.3** |
+| Voxel grid | 58.6 | **70.3** |
 
-Training loss kept falling for all three between 10k and 20k, but only voxels and meshes improved on the test set;
-the point decoder (the least constrained output: its last layer alone has 3M weights) had started to overfit.
-Note that picking the better checkpoint by test F1 is a mild form of test-set selection; with a held-out validation
-split this choice would be made there instead.
+Point clouds score highest because they're trained on almost exactly what F1 measures: every point moves freely and chamfer pulls it onto the surface. Nothing ties the points together, which is why the clouds bunch up at the seat and back, where most of the surface is, and leave the legs sparse. Meshes use the same loss, but every vertex is tied to the sphere, so they can't open holes between legs, and vertices pulled toward thin parts turn into spikes. Voxels are limited by resolution (one voxel is about 0.03, close to the 0.05 threshold), by thin parts disappearing, and by the marching-cubes step before scoring. Going from 10k to 20k steps helped voxels and meshes a lot, but the point model started to overfit, so its 10k checkpoint is kept. Choosing checkpoints by test F1 is a mild form of test-set selection; a validation split would be the cleaner way.
 
-- **Point clouds score highest** because the network is trained on almost exactly what F1 measures: each of the 1000
-  points is free to move and the chamfer loss directly pulls points onto the surface. It pays nothing for structure,
-  which is why the clouds look like a dense blob at the seat with sparse legs: the seat and back hold most of the surface area.
-- **Meshes** optimize the same chamfer objective but every vertex is tied to a sphere's connectivity. They cannot open
-  holes between legs or under the seat, and with a small smoothness weight the vertices that are pulled toward thin parts form spikes.
-- **Voxels** are limited by resolution (one voxel is 1/32 of the box, close to the 0.05 threshold itself), by the
-  class imbalance that makes thin parts disappear, and by the marching-cubes step between prediction and evaluation.
-
-### 2.4 Analyse effects of hyperparameter variations
-
+## 2.4 Effects of hyperparameters
 *In progress.*
 
-### 2.5 Interpret your model
-
+## 2.5 Interpreting the model
 *In progress.*
 
-## 3. Exploring other architectures / datasets
-
+## 3. Other architectures / datasets
 *In progress.*
