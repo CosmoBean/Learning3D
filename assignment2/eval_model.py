@@ -24,7 +24,7 @@ def get_args_parser():
     parser.add_argument('--vis_freq', default=1000, type=int)
     parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--num_workers', default=0, type=int)
-    parser.add_argument('--type', default='vox', choices=['vox', 'point', 'mesh', 'implicit'], type=str)
+    parser.add_argument('--type', default='vox', choices=['vox', 'point', 'mesh', 'implicit', 'parametric'], type=str)
     parser.add_argument('--n_points', default=1000, type=int)
     parser.add_argument('--w_chamfer', default=1.0, type=float)
     parser.add_argument('--w_smooth', default=0.1, type=float)  
@@ -46,7 +46,7 @@ def preprocess(feed_dict, args):
     return images, mesh
 
 def save_plot(thresholds, avg_f1_score, args):
-    names = {'vox': 'Voxel grid', 'point': 'Point cloud', 'mesh': 'Mesh', 'implicit': 'Implicit network'}
+    names = {'vox': 'Voxel grid', 'point': 'Point cloud', 'mesh': 'Mesh', 'implicit': 'Implicit network', 'parametric': 'Parametric network'}
     fig, ax = plt.subplots(figsize=(5, 3.2))
     ax.plot(thresholds, avg_f1_score, marker='o')
     ax.set(xlabel='Distance threshold', ylabel='F1 score (%)', ylim=(0, 100), xticks=thresholds)
@@ -107,7 +107,7 @@ def evaluate(predictions, mesh_gt, thresholds, args):
         pred_points = T_transform.transform_points(pred_points)
         # re-center the predicted points
         pred_points = pred_points - pred_points.mean(1, keepdim=True)
-    elif args.type == "point":
+    elif args.type in ("point", "parametric"):
         pred_points = predictions.cpu()
     elif args.type == "mesh":
         pred_points = sample_points_from_meshes(predictions, args.n_points).cpu()
@@ -178,7 +178,7 @@ def evaluate_model(args):
 
         if (step % args.vis_freq) == 0 and not empty:
             # input RGB | GT mesh | prediction (same order as the course example)
-            pred = {"vox": vis.vox_mesh, "implicit": vis.vox_mesh, "point": vis.points,
+            pred = {"vox": vis.vox_mesh, "implicit": vis.vox_mesh, "point": vis.points, "parametric": vis.points,
                     "mesh": lambda p: vis.mesh(p.verts_packed(), p.faces_packed())}[args.type](predictions)
             gt = vis.mesh(mesh_gt.verts_packed(), mesh_gt.faces_packed())
             img = feed_dict['images'][0].cpu().numpy().repeat(2, 0).repeat(2, 1)  # 2x upsample for legibility

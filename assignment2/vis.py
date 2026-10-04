@@ -41,7 +41,7 @@ def render(obj, n=1, size=256, dist=1.3, elev=20.0, azim=30.0, device="cuda"):
                                   AlphaCompositor(background_color=(1, 1, 1)))
     else:
         lights = PointLights(location=cams.get_camera_center(), device=device)
-        renderer = MeshRenderer(MeshRasterizer(cams, RasterizationSettings(image_size=size)),
+        renderer = MeshRenderer(MeshRasterizer(cams, RasterizationSettings(image_size=size, bin_size=0)),
                                 HardPhongShader(device, cams, lights))
     return (renderer(obj)[..., :3].clamp(0, 1).cpu().numpy() * 255).astype(np.uint8)
 

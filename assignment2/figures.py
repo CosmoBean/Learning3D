@@ -44,3 +44,12 @@ figure("output/q25_error.png", [panels(f"vis/q25_error_{s}.png") for s in CHAIRS
 figure("output/q31_vox_vs_implicit.png",
        [panels(f"vis/{s}_vox.png") + [panels(f"vis/{s}_implicit.png")[2]] for s in (0, 400, 500)],
        ("Image", "Ground truth", "Voxel", "Implicit"))
+
+figure("output/q32_point_vs_parametric.png",
+       [panels(f"vis/{s}_point.png") + [panels(f"vis/{s}_parametric.png")[2]] for s in CHAIRS],
+       ("Image", "Ground truth", "Point cloud", "Parametric"))
+
+# 3-class test set order: planes 0-404, cars 405-772, chairs 773-1450
+figure("output/q33_1class_vs_3class.png",
+       [panels(f"vis/{s}_point_1c.png") + [panels(f"vis/{s}_point_3c.png")[2]] for s in (200, 600, 1000)],
+       ("Image", "Ground truth", "Trained on chairs", "Trained on 3 classes"))
