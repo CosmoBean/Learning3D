@@ -4,15 +4,13 @@
 
 **Name:** Sri Datta Bandreddi
 
-Trained on one H100. The image encoder is trained from the images directly; `--load_feat` was not used.
-
 ## 1.1 Fitting a voxel grid
 Fit a random grid to a chair using binary cross-entropy.
 
 ![voxel fit](output/q1_vox.gif)
 
 ## 1.2 Fitting a point cloud
-Fit 5000 random points to a chair using chamfer loss (written from scratch).
+Fit 5000 random points to a chair using chamfer loss.
 
 ![point cloud fit](output/q1_point.gif)
 
