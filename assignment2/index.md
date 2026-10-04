@@ -37,7 +37,7 @@ Conv3d 32->1, k3
 
 ![F1 vox](output/eval_vox.png)
 
-Thin chairs (bottom row) are hard: most voxels are empty, so the model leaves thin parts out.
+Thin chairs (bottom row) are hard. Most voxels are empty, so the model leaves thin parts out.
 
 ## 2.2 Image to point cloud
 ```
@@ -66,7 +66,7 @@ The offsets move the points of a sphere mesh.
 
 ![F1 mesh](output/eval_mesh.png)
 
-**Comparison:**
+**Comparison**
 
 | Representation | F1 at 10k steps | F1 at 20k steps |
 |---|---|---|
@@ -97,11 +97,11 @@ Where does the point model go wrong? Each point is coloured by its distance to t
 
 ![error colouring](output/q25_error.png)
 
-Recall and point distribution by height, over all 678 test chairs:
+Recall and point distribution by height, over all 678 test chairs.
 
 ![error by height](output/q25_height.png)
 
-Recall is about 85% in the middle of the chair but drops to 62% at the feet and 68% at the top of the backrest. The model places 74% of its points in the seat region (height 0.3 to 0.7), which holds only 57% of the surface. Seats look alike across chairs, so this is a safe bet under chamfer loss; legs and backrests vary more, so the model spreads fewer points there.
+Recall is about 85% in the middle of the chair but drops to 62% at the feet and 68% at the top of the backrest. The model places 74% of its points in the seat region (height 0.3 to 0.7), which holds only 57% of the surface. Seats look alike across chairs, so this is a safe bet under chamfer loss. Legs and backrests vary more, so the model spreads fewer points there.
 
 ## 3.1 Implicit network
 An MLP takes the image features and one 3D point, and says whether the point is inside the chair. Asking it at every point of a 32^3 grid gives a voxel grid, trained and tested like 2.1.
@@ -122,7 +122,7 @@ Linear 512->1
 
 ![F1 implicit](output/eval_implicit.png)
 
-The implicit model is much worse. It makes smooth blobs and loses thin parts like legs, and 80 chairs come out empty. A plain MLP on raw (x, y, z) has trouble with sharp detail; adding a positional encoding (as in NeRF) is the usual fix. Its one advantage is size: 14x smaller than the voxel decoder.
+The implicit model is much worse. It makes smooth blobs, loses thin parts like legs, and leaves 80 chairs empty. It is 14x smaller than the voxel decoder.
 
 ## 3.2 Parametric network
 An MLP takes the image features and a random 2D point from a unit square, and outputs one 3D point. Asking it at 1000 random 2D points gives a point cloud, trained and tested like 2.2.
