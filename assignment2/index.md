@@ -76,7 +76,7 @@ The offsets move the points of a sphere mesh.
 
 - **Points score best.** Each point can move anywhere, and the loss is close to what F1 measures.
 - **Meshes come next.** They use the same loss, but a sphere can't make holes, so thin parts become spikes.
-- **Voxels score lowest.** A 32³ grid is coarse, and thin parts vanish.
+- **Voxels score lowest.** A 32^3 grid is coarse, and thin parts vanish.
 - **Longer training** helped voxels and meshes, but the point model started to memorize the training chairs, so its 10k version is kept.
 
 ## 2.4 Effects of hyperparameters
