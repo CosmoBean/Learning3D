@@ -1,8 +1,6 @@
 # specify the root location where u downloaded the dataset
-import os
-# R2N2_ROOT / R2N2_FULL=1 let concurrent runs pick a dataset without editing this file
-root_location = os.environ.get("R2N2_ROOT", "data")
-use_full_dataset = os.environ.get("R2N2_FULL") == "1"
+root_location = "data"
+use_full_dataset = False
 dataset_name = (
     "r2n2_shapenet_dataset_full" if use_full_dataset else "r2n2_shapenet_dataset"
 )

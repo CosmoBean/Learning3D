@@ -125,10 +125,10 @@ Linear 512->1
 The implicit model is much worse. It makes smooth blobs and loses thin parts like legs, and 80 chairs come out empty. A plain MLP on raw (x, y, z) has trouble with sharp detail; adding a positional encoding (as in NeRF) is the usual fix. Its one advantage is size: 14x smaller than the voxel decoder.
 
 ## 3.2 Parametric network
-An MLP takes the image features, a random 2D point from a unit square, and a patch number (one of 8), and outputs one 3D point. Each patch works like a sheet that the network bends onto part of the chair. It makes 1000 points per chair and is trained with chamfer loss like 2.2.
+An MLP takes the image features and a random 2D point from a unit square, and outputs one 3D point. Asking it at 1000 random 2D points gives a point cloud, trained and tested like 2.2.
 ```
-image features (512) + 2D point (2) + patch number (8)
-Linear 522->512, ReLU
+image features (512) + 2D point (u, v)
+Linear 514->512, ReLU
 Linear 512->512, ReLU
 Linear 512->512, ReLU
 Linear 512->3, tanh
@@ -136,25 +136,23 @@ Linear 512->3, tanh
 
 ![point vs parametric](output/q32_point_vs_parametric.png)
 
-| Decoder | F1@0.05 (10k steps) | Decoder size |
-|---|---|---|
-| Point cloud (2.2) | **79.9** | 4.65M |
-| Parametric | 75.9 | 0.79M |
+| Decoder | F1@0.05 (10k steps) |
+|---|---|
+| Point cloud (2.2) | **79.9** |
+| Parametric | 70.6 |
 
 ![F1 parametric](output/eval_parametric.png)
 
-The parametric decoder scores a little lower but is 6x smaller. Its points come from bent sheets, so neighbouring points stay together: legs show up as lines and the backrest as a band. It can also make any number of points, because it just samples more 2D points. The cost is flexibility: each sheet has to stay in one piece, so it can't place points as freely as the point decoder.
+The parametric model is worse. It bends a single flat sheet into the chair, so the sheet has to stretch between the seat, back and legs, and points land in the gaps. Using several sheets (as in AtlasNet) is the usual fix. Its advantages are size (6x smaller than the point decoder) and that it can make any number of points.
 
 ## 3.3 Extended dataset
-Train the point model from 2.2 on chairs, planes and cars (12,886 objects) instead of chairs only (6,100), with the same 10k steps.
+Train the point model from 2.2 on chairs, planes and cars (12,886 objects instead of 6,100), 10k steps. Both models are tested on the 3-class test set.
 
 ![1 class vs 3 classes](output/q33_1class_vs_3class.png)
 
-| Trained on | Chair test set | 3-class test: planes | cars | chairs | all |
-|---|---|---|---|---|---|
-| Chairs only | **79.9** | 70.1 | 67.0 | 79.6 | 73.8 |
-| 3 classes | 79.6 | **95.9** | **93.5** | **79.8** | **87.7** |
+| Trained on | Chairs | Planes | Cars | All |
+|---|---|---|---|---|
+| Chairs only | 79.6 | 70.1 | 67.0 | 73.8 |
+| 3 classes | **79.8** | **95.9** | **93.5** | **87.7** |
 
-- **Chairs score the same** (79.9 vs 79.6), even though each chair was seen about half as often. Planes and cars did not confuse the model about chairs.
-- **The chair-only model turns everything into a chair.** It only learned one shape, so a plane or car comes out as a chair-like blob. The 3-class model first recognizes what the object is, then fits its shape, so its outputs are much more varied.
-- **Planes and cars are easier than chairs** (about 95 vs 80). Planes look alike and cars look alike, while chairs vary a lot (legs, arms, backs).
+Chairs score the same, even though each chair is seen half as often. The chair-only model turns planes and cars into chair-like blobs, while the 3-class model gets their shape. Planes and cars score higher than chairs because their shapes vary less.

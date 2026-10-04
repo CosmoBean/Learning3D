@@ -56,10 +56,9 @@ class SingleViewto3D(nn.Module):
                 nn.Linear(512, 512), nn.ReLU(),
                 nn.Linear(512, 1))
         elif args.type == "parametric":
-            # AtlasNet-style: (image feature, 2D point in the unit square, patch id) -> 3D surface point
-            self.n_point, self.n_patch = args.n_points, 8
+            # AtlasNet-style: (image feature, 2D point in the unit square) -> 3D point
             self.decoder = nn.Sequential(
-                nn.Linear(512 + 2 + self.n_patch, 512), nn.ReLU(),
+                nn.Linear(512 + 2, 512), nn.ReLU(),
                 nn.Linear(512, 512), nn.ReLU(),
                 nn.Linear(512, 512), nn.ReLU(),
                 nn.Linear(512, 3), nn.Tanh())
@@ -98,9 +97,6 @@ class SingleViewto3D(nn.Module):
             return self.decoder(torch.cat([feat, pts], -1)).reshape(B, 1, 32, 32, 32)
 
         elif args.type == "parametric":
-            dev = encoded_feat.device
-            uv = torch.rand(B, self.n_point, 2, device=dev)  # fresh samples every call
-            patch = torch.nn.functional.one_hot(torch.arange(self.n_point, device=dev) % self.n_patch, self.n_patch)
-            feat = encoded_feat[:, None].expand(-1, self.n_point, -1)
-            return self.decoder(torch.cat([feat, uv, patch.float().expand(B, -1, -1)], -1))
-
+            uv = torch.rand(B, args.n_points, 2, device=encoded_feat.device)  # new samples every call
+            feat = encoded_feat[:, None].expand(-1, args.n_points, -1)
+            return self.decoder(torch.cat([feat, uv], -1))
