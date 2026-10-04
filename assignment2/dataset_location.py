@@ -1,6 +1,5 @@
 # specify the root location where u downloaded the dataset
-import os
-root_location = os.environ.get("R2N2_ROOT", "data")  # R2N2_ROOT: optional fast local copy
+root_location = "data"
 use_full_dataset = False
 dataset_name = (
     "r2n2_shapenet_dataset_full" if use_full_dataset else "r2n2_shapenet_dataset"
