@@ -48,31 +48,23 @@ with torch.no_grad():
         if step in SHOW:
             img = feed['images'][0].cpu().numpy().repeat(2, 0).repeat(2, 1)
             renders = [vis.render(vis.points(p, colors(d)), size=img.shape[0])[0] for p, d in ((gt, d_gt), (pred, d_pred))]
-            plt.imsave(f"output/q25_error_{step}.png", np.concatenate([(img * 255).astype(np.uint8)] + renders, 1))
+            plt.imsave(f"vis/q25_error_{step}.png", np.concatenate([(img * 255).astype(np.uint8)] + renders, 1))
 
 n = step + 1
 recall, share_gt, share_pred = 100 * covered / total, 100 * share_gt / n, 100 * share_pred / n
 centers = (np.arange(BINS) + 0.5) / BINS
-BLUE, ORANGE, INK, GRID = "#2a78d6", "#eb6834", "#333333", "#e6e6e3"
-plt.rcParams.update({"font.size": 10, "text.color": INK, "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK})
 fig, (a, b) = plt.subplots(1, 2, figsize=(10, 3.8), sharey=True)
-for ax in (a, b):
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.grid(axis="x", color=GRID, linewidth=1)
-    ax.set_axisbelow(True)
-
-a.barh(centers, recall, height=0.07, color=BLUE)
+a.barh(centers, recall, height=0.07)
 for i in (0, int(recall.argmax()), BINS - 1):  # label the ends and the best band only
-    a.text(recall[i] + 1.5, centers[i], f"{recall[i]:.0f}%", va="center", fontsize=9)
+    a.text(recall[i] + 1.5, centers[i], f"{recall[i]:.0f}%", va="center")
 a.set(xlim=(0, 100), xlabel="Recall at 0.05 (%)", ylabel="Normalized height",
       yticks=[0, 0.5, 1], yticklabels=["0 (floor)", "0.5", "1 (top)"])
-a.set_title("Recall by height", loc="left", fontweight="bold")
-
-for y, label, color in ((share_gt, "Ground truth", BLUE), (share_pred, "Prediction", ORANGE)):
-    b.plot(y, centers, "o-", color=color, linewidth=2, markersize=6, label=label)
+b.plot(share_gt, centers, "o-", label="Ground truth")
+b.plot(share_pred, centers, "o-", label="Prediction")
 b.set(xlim=(0, 30), xlabel="Share of points (%)")
-b.set_title("Point distribution by height", loc="left", fontweight="bold")
-b.legend(frameon=False, loc="upper right")
+b.legend(frameon=False)
+for ax, title in ((a, "Recall by height"), (b, "Point distribution by height")):
+    ax.set_title(title, loc="left", fontweight="bold")
 plt.savefig("output/q25_height.png", bbox_inches="tight", dpi=150)
 for c, r, g, p in zip(centers, recall, share_gt, share_pred):
     print(f"height {c:.2f}: covered {r:5.1f}%  GT share {g:5.1f}%  pred share {p:5.1f}%")

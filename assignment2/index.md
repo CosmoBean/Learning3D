@@ -35,7 +35,7 @@ Conv3d 32->1, k3
 
 ![voxel results](output/q2_vox.png)
 
-![F1 vox](eval_vox.png)
+![F1 vox](output/eval_vox.png)
 
 Thin chairs (bottom row) are hard: most voxels are empty, so the model leaves thin parts out.
 
@@ -50,7 +50,7 @@ Linear 1024->3000, tanh
 
 ![point results](output/q2_point.png)
 
-![F1 point](eval_point.png)
+![F1 point](output/eval_point.png)
 
 ## 2.3 Image to mesh
 ```
@@ -64,7 +64,7 @@ The offsets move the points of a sphere mesh.
 
 ![mesh results](output/q2_mesh.png)
 
-![F1 mesh](eval_mesh.png)
+![F1 mesh](output/eval_mesh.png)
 
 **Comparison:**
 
@@ -120,6 +120,6 @@ Linear 512->1
 | Voxel (3D conv) | 58.6 | **70.3** | 0 |
 | Implicit (MLP) | 41.6 | 47.8 | 80 |
 
-![F1 implicit](eval_implicit.png)
+![F1 implicit](output/eval_implicit.png)
 
 The implicit model is much worse. It makes smooth blobs and loses thin parts like legs, and 80 chairs come out empty. A plain MLP on raw (x, y, z) has trouble with sharp detail; adding a positional encoding (as in NeRF) is the usual fix. Its one advantage is size: 14x smaller than the voxel decoder.

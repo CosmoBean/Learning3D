@@ -48,13 +48,10 @@ def preprocess(feed_dict, args):
 def save_plot(thresholds, avg_f1_score, args):
     names = {'vox': 'Voxel grid', 'point': 'Point cloud', 'mesh': 'Mesh', 'implicit': 'Implicit network'}
     fig, ax = plt.subplots(figsize=(5, 3.2))
-    ax.plot(thresholds, avg_f1_score, marker='o', color='#2a78d6', linewidth=2, markersize=6)
+    ax.plot(thresholds, avg_f1_score, marker='o')
     ax.set(xlabel='Distance threshold', ylabel='F1 score (%)', ylim=(0, 100), xticks=thresholds)
     ax.set_title(f'F1 score vs. threshold: {names[args.type]}', loc='left', fontweight='bold')
-    ax.spines[['top', 'right']].set_visible(False)
-    ax.grid(axis='y', color='#e6e6e3', linewidth=1)
-    ax.set_axisbelow(True)
-    plt.savefig(f'eval_{args.type}{args.tag}', bbox_inches='tight', dpi=150)
+    plt.savefig(f'output/eval_{args.type}{args.tag}.png', bbox_inches='tight', dpi=150)
     plt.close(fig)
 
 
@@ -211,6 +208,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Singleto3D', parents=[get_args_parser()])
     args = parser.parse_args()
     os.makedirs('vis', exist_ok=True)
+    os.makedirs('output', exist_ok=True)
     # dataset picks a random view per test chair; fix it so models see the same views.
     # The views also depend on --num_workers (each worker has its own seed): reported results use 6.
     random.seed(21); torch.manual_seed(21)

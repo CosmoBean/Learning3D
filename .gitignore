@@ -45,3 +45,4 @@ data/
 *.pth
 ckpt_*/
 logs/
+assignment2/vis/

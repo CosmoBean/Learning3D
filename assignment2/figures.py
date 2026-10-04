@@ -37,7 +37,7 @@ figure("output/q24_wsmooth.png",
         for s in CHAIRS],
        ("Image", "Ground truth", "w_smooth 0.1", "w_smooth 1", "w_smooth 5"))
 
-figure("output/q25_error.png", [panels(f"output/q25_error_{s}.png") for s in CHAIRS], COLS,
+figure("output/q25_error.png", [panels(f"vis/q25_error_{s}.png") for s in CHAIRS], COLS,
        colorbar=("Distance to nearest point (red = 0.1 or more)", 0.1))
 
 # chair #100 comes out empty for the implicit model, so use #500 here
