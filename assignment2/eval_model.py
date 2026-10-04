@@ -177,12 +177,12 @@ def evaluate_model(args):
             metrics = evaluate(predictions, mesh_gt, thresholds, args)
 
         if (step % args.vis_freq) == 0 and not empty:
-            # input RGB | prediction | GT mesh
+            # input RGB | GT mesh | prediction (same order as the course example)
             pred = {"vox": vis.vox_mesh, "implicit": vis.vox_mesh, "point": vis.points,
                     "mesh": lambda p: vis.mesh(p.verts_packed(), p.faces_packed())}[args.type](predictions)
             gt = vis.mesh(mesh_gt.verts_packed(), mesh_gt.faces_packed())
             img = feed_dict['images'][0].cpu().numpy().repeat(2, 0).repeat(2, 1)  # 2x upsample for legibility
-            rend = np.concatenate([(img * 255).astype(np.uint8)] + [vis.render(m, size=img.shape[0])[0] for m in (pred, gt)], axis=1)
+            rend = np.concatenate([(img * 255).astype(np.uint8)] + [vis.render(m, size=img.shape[0])[0] for m in (gt, pred)], axis=1)
             plt.imsave(f'vis/{step}_{args.type}{args.tag}.png', rend)
       
 
@@ -208,5 +208,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Singleto3D', parents=[get_args_parser()])
     args = parser.parse_args()
     os.makedirs('vis', exist_ok=True)
-    random.seed(21); torch.manual_seed(21)  # dataset picks a random view per test chair; fix it so models see the same views
+    # dataset picks a random view per test chair; fix it so models see the same views.
+    # The views also depend on --num_workers (each worker has its own seed): reported results use 6.
+    random.seed(21); torch.manual_seed(21)
     evaluate_model(args)

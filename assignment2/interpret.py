@@ -47,7 +47,7 @@ with torch.no_grad():
 
         if step in SHOW:
             img = feed['images'][0].cpu().numpy().repeat(2, 0).repeat(2, 1)
-            renders = [vis.render(vis.points(p, colors(d)), size=img.shape[0])[0] for p, d in ((pred, d_pred), (gt, d_gt))]
+            renders = [vis.render(vis.points(p, colors(d)), size=img.shape[0])[0] for p, d in ((gt, d_gt), (pred, d_pred))]
             plt.imsave(f"output/q25_error_{step}.png", np.concatenate([(img * 255).astype(np.uint8)] + renders, 1))
 
 n = step + 1
