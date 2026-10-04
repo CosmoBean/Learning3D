@@ -13,7 +13,7 @@ def panels(path):
     return [im[:, i * w:(i + 1) * w] for i in range(im.shape[1] // w)]
 
 
-def figure(out, rows, titles):
+def figure(out, rows, titles, colorbar=None):
     fig, axes = plt.subplots(len(rows), len(titles), figsize=(2.4 * len(titles), 2.4 * len(rows)), squeeze=False)
     for r, row in enumerate(rows):
         for c, im in enumerate(row):
@@ -21,6 +21,10 @@ def figure(out, rows, titles):
             axes[r][c].axis("off")
             if r == 0:
                 axes[r][c].set_title(titles[c])
+    if colorbar:  # (label, max value) for the coolwarm error colouring
+        sm = plt.cm.ScalarMappable(cmap="coolwarm", norm=plt.Normalize(0, colorbar[1]))
+        cb = fig.colorbar(sm, ax=axes, orientation="horizontal", fraction=0.03, pad=0.02, aspect=40)
+        cb.set_label(colorbar[0])
     fig.savefig(out, bbox_inches="tight", dpi=120)
     plt.close(fig)
 
@@ -33,8 +37,8 @@ figure("output/q24_wsmooth.png",
         for s in CHAIRS],
        ("Image", "Ground truth", "w_smooth 0.1", "w_smooth 1", "w_smooth 5"))
 
-figure("output/q25_error.png", [panels(f"output/q25_error_{s}.png") for s in CHAIRS],
-       ("Image", "Ground truth (red = missed)", "Prediction (red = off)"))
+figure("output/q25_error.png", [panels(f"output/q25_error_{s}.png") for s in CHAIRS], COLS,
+       colorbar=("Distance to nearest point (red = 0.1 or more)", 0.1))
 
 # chair #100 comes out empty for the implicit model, so use #500 here
 figure("output/q31_vox_vs_implicit.png",

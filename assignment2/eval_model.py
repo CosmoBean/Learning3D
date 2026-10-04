@@ -46,13 +46,16 @@ def preprocess(feed_dict, args):
     return images, mesh
 
 def save_plot(thresholds, avg_f1_score, args):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(thresholds, avg_f1_score, marker='o')
-    ax.set_xlabel('Threshold')
-    ax.set_ylabel('F1-score')
-    ax.set_title(f'Evaluation {args.type}')
-    plt.savefig(f'eval_{args.type}{args.tag}', bbox_inches='tight')
+    names = {'vox': 'Voxel grid', 'point': 'Point cloud', 'mesh': 'Mesh', 'implicit': 'Implicit network'}
+    fig, ax = plt.subplots(figsize=(5, 3.2))
+    ax.plot(thresholds, avg_f1_score, marker='o', color='#2a78d6', linewidth=2, markersize=6)
+    ax.set(xlabel='Distance threshold', ylabel='F1 score (%)', ylim=(0, 100), xticks=thresholds)
+    ax.set_title(f'F1 score vs. threshold: {names[args.type]}', loc='left', fontweight='bold')
+    ax.spines[['top', 'right']].set_visible(False)
+    ax.grid(axis='y', color='#e6e6e3', linewidth=1)
+    ax.set_axisbelow(True)
+    plt.savefig(f'eval_{args.type}{args.tag}', bbox_inches='tight', dpi=150)
+    plt.close(fig)
 
 
 def compute_sampling_metrics(pred_points, gt_points, thresholds, eps=1e-8):

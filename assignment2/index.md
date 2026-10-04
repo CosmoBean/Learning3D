@@ -7,17 +7,17 @@
 Trained on one H100. The image encoder is trained from the images directly; `--load_feat` was not used.
 
 ## 1.1 Fitting a voxel grid
-Fit a random grid to a chair using binary cross-entropy. Left: fit, right: target.
+Fit a random grid to a chair using binary cross-entropy.
 
 ![voxel fit](output/q1_vox.gif)
 
 ## 1.2 Fitting a point cloud
-Fit 5000 random points to a chair using chamfer loss (written from scratch). Left: fit, right: target.
+Fit 5000 random points to a chair using chamfer loss (written from scratch).
 
 ![point cloud fit](output/q1_point.gif)
 
 ## 1.3 Fitting a mesh
-Deform a sphere into a chair using chamfer loss plus smoothing. Left: fit, right: target. A sphere can't make holes, so it stretches thin sheets between the legs.
+Deform a sphere into a chair using chamfer loss plus smoothing. A sphere can't make holes, so it stretches thin sheets between the legs.
 
 ![mesh fit](output/q1_mesh.gif)
 
@@ -95,7 +95,7 @@ Change the mesh smoothing weight `w_smooth` (10k steps each).
 More smoothing gives cleaner meshes but a lower score. At 5, the legs merge into one tent shape. F1 only checks that points land near the surface, so the spiky meshes score higher.
 
 ## 2.5 Interpreting the model
-Where does the point model go wrong? Points are coloured by error: blue is right, red is off by 0.1 or more.
+Where does the point model go wrong? Each point is coloured by its distance to the nearest point of the other shape.
 
 ![error colouring](output/q25_error.png)
 

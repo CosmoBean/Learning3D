@@ -2,6 +2,7 @@ import imageio
 import mcubes
 import numpy as np
 import torch
+from PIL import Image, ImageDraw, ImageFont
 from pytorch3d.renderer import (AlphaCompositor, FoVPerspectiveCameras, HardPhongShader, MeshRasterizer, MeshRenderer,
                                 PointLights, PointsRasterizationSettings, PointsRasterizer, PointsRenderer,
                                 RasterizationSettings, TexturesVertex, look_at_view_transform)
@@ -45,6 +46,14 @@ def render(obj, n=1, size=256, dist=1.3, elev=20.0, azim=30.0, device="cuda"):
     return (renderer(obj)[..., :3].clamp(0, 1).cpu().numpy() * 255).astype(np.uint8)
 
 
-def save_gif(path, *renders):
-    """Save 360-degree renders (each n x H x W x 3) side by side as a looping gif."""
-    imageio.mimsave(path, list(np.concatenate(renders, axis=2)), duration=60, loop=0)
+def save_gif(path, *renders, titles=None):
+    """Save 360-degree renders (each n x H x W x 3) side by side as a looping gif, optionally with a title per panel."""
+    frames = np.concatenate(renders, axis=2)
+    if titles:
+        w = renders[0].shape[2]
+        header = Image.new("RGB", (frames.shape[2], 32), "white")
+        draw, font = ImageDraw.Draw(header), ImageFont.load_default(size=18)
+        for i, t in enumerate(titles):
+            draw.text((w * i + w / 2, 16), t, fill=(51, 51, 51), font=font, anchor="mm")
+        frames = np.concatenate([np.repeat(np.asarray(header)[None], len(frames), 0), frames], axis=1)
+    imageio.mimsave(path, list(frames), duration=60, loop=0)

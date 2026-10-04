@@ -130,7 +130,7 @@ def train_model(args):
 
         # fitting
         fit_voxel(voxels_src, voxels_tgt, args)
-        vis.save_gif('output/q1_vox.gif', vis.render(vis.vox_mesh(voxels_src.sigmoid()), 36), vis.render(vis.vox_mesh(voxels_tgt), 36))
+        vis.save_gif('output/q1_vox.gif', vis.render(vis.vox_mesh(voxels_src.sigmoid()), 36), vis.render(vis.vox_mesh(voxels_tgt), 36), titles=('Fit', 'Target'))
 
 
     elif args.type == "point":
@@ -141,7 +141,7 @@ def train_model(args):
 
         # fitting
         fit_pointcloud(pointclouds_src, pointclouds_tgt, args)        
-        vis.save_gif('output/q1_point.gif', vis.render(vis.points(pointclouds_src), 36), vis.render(vis.points(pointclouds_tgt), 36))
+        vis.save_gif('output/q1_point.gif', vis.render(vis.points(pointclouds_src), 36), vis.render(vis.points(pointclouds_tgt), 36), titles=('Fit', 'Target'))
     
     elif args.type == "mesh":
         # initialization
@@ -151,7 +151,7 @@ def train_model(args):
 
         # fitting
         fit_mesh(mesh_src, mesh_tgt, args)        
-        vis.save_gif('output/q1_mesh.gif', vis.render(vis.mesh(mesh_src.verts_packed(), mesh_src.faces_packed()), 36), vis.render(vis.mesh(feed_cuda['verts'], feed_cuda['faces']), 36))
+        vis.save_gif('output/q1_mesh.gif', vis.render(vis.mesh(mesh_src.verts_packed(), mesh_src.faces_packed()), 36), vis.render(vis.mesh(feed_cuda['verts'], feed_cuda['faces']), 36), titles=('Fit', 'Target'))
 
 
     
