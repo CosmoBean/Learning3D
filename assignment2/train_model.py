@@ -19,7 +19,7 @@ def get_args_parser():
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--num_workers", default=4, type=int)
     parser.add_argument(
-        "--type", default="vox", choices=["vox", "point", "mesh"], type=str
+        "--type", default="vox", choices=["vox", "point", "mesh", "implicit"], type=str
     )
     parser.add_argument("--n_points", default=1000, type=int)
     parser.add_argument("--w_chamfer", default=1.0, type=float)
@@ -28,12 +28,13 @@ def get_args_parser():
     parser.add_argument("--load_checkpoint", action="store_true")
     parser.add_argument('--device', default='cuda', type=str) 
     parser.add_argument('--load_feat', action='store_true') 
+    parser.add_argument("--tag", default="", type=str)  # suffix for checkpoint name, e.g. _ws1
     return parser
 
 
 def preprocess(feed_dict, args):
     images = feed_dict["images"].squeeze(1)
-    if args.type == "vox":
+    if args.type in ("vox", "implicit"):
         voxels = feed_dict["voxels"].float()
         ground_truth_3d = voxels
     elif args.type == "point":
@@ -50,7 +51,7 @@ def preprocess(feed_dict, args):
 
 
 def calculate_loss(predictions, ground_truth, args):
-    if args.type == "vox":
+    if args.type in ("vox", "implicit"):
         loss = losses.voxel_loss(predictions, ground_truth)
     elif args.type == "point":
         loss = losses.chamfer_loss(predictions, ground_truth)
@@ -81,6 +82,7 @@ def train_model(args):
         num_workers=args.num_workers,
         collate_fn=collate_batched_R2N2,
         pin_memory=True,
+        persistent_workers=args.num_workers > 0,
         drop_last=True,
         shuffle=True,
     )
@@ -96,7 +98,7 @@ def train_model(args):
     start_time = time.time()
 
     if args.load_checkpoint:
-        checkpoint = torch.load(f"checkpoint_{args.type}.pth")
+        checkpoint = torch.load(f"checkpoint_{args.type}{args.tag}.pth")
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_iter = checkpoint["step"]
@@ -137,7 +139,7 @@ def train_model(args):
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
                 },
-                f"checkpoint_{args.type}.pth",
+                f"checkpoint_{args.type}{args.tag}.pth",
             )
 
         print(

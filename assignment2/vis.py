@@ -17,8 +17,10 @@ def mesh(verts, faces, color=(0.7, 0.7, 1.0)):
 
 
 def points(pts, color=(0.2, 0.4, 0.9)):
+    """color: one rgb tuple, or an N x 3 tensor of per-point colors."""
     pts = pts.detach().reshape(-1, 3).float()
-    return Pointclouds([pts], features=[torch.tensor(color, device=pts.device).expand_as(pts)])
+    color = torch.as_tensor(color, device=pts.device).float()
+    return Pointclouds([pts], features=[color.expand_as(pts)])
 
 
 def vox_mesh(vox, thresh=0.5):

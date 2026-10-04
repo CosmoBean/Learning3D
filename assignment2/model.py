@@ -46,6 +46,15 @@ class SingleViewto3D(nn.Module):
                 nn.Linear(512, 1024), nn.ReLU(),
                 nn.Linear(1024, 1024), nn.ReLU(),
                 nn.Linear(1024, n_verts * 3))
+        elif args.type == "implicit":
+            # occupancy network: (image feature, xyz in [-1,1]^3) -> occupancy logit, queried on a 32^3 grid
+            g = torch.linspace(-1, 1, 32)
+            self.register_buffer("grid", torch.stack(torch.meshgrid(g, g, g, indexing="ij"), -1).reshape(-1, 3))
+            self.decoder = nn.Sequential(
+                nn.Linear(512 + 3, 512), nn.ReLU(),
+                nn.Linear(512, 512), nn.ReLU(),
+                nn.Linear(512, 512), nn.ReLU(),
+                nn.Linear(512, 1))
 
     def forward(self, images, args):
         results = dict()
@@ -74,4 +83,9 @@ class SingleViewto3D(nn.Module):
             deform_vertices_pred = self.decoder(encoded_feat)
             mesh_pred = self.mesh_pred.offset_verts(deform_vertices_pred.reshape([-1,3]))
             return  mesh_pred          
+
+        elif args.type == "implicit":
+            pts = self.grid.expand(B, -1, -1)  # b x 32768 x 3
+            feat = encoded_feat[:, None].expand(-1, pts.shape[1], -1)
+            return self.decoder(torch.cat([feat, pts], -1)).reshape(B, 1, 32, 32, 32)
 

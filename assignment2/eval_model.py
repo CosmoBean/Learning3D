@@ -24,13 +24,14 @@ def get_args_parser():
     parser.add_argument('--vis_freq', default=1000, type=int)
     parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--num_workers', default=0, type=int)
-    parser.add_argument('--type', default='vox', choices=['vox', 'point', 'mesh'], type=str)
+    parser.add_argument('--type', default='vox', choices=['vox', 'point', 'mesh', 'implicit'], type=str)
     parser.add_argument('--n_points', default=1000, type=int)
     parser.add_argument('--w_chamfer', default=1.0, type=float)
     parser.add_argument('--w_smooth', default=0.1, type=float)  
     parser.add_argument('--load_checkpoint', action='store_true')  
     parser.add_argument('--device', default='cuda', type=str) 
     parser.add_argument('--load_feat', action='store_true') 
+    parser.add_argument('--tag', default='', type=str)  # suffix for checkpoint / output names
     return parser
 
 def preprocess(feed_dict, args):
@@ -51,7 +52,7 @@ def save_plot(thresholds, avg_f1_score, args):
     ax.set_xlabel('Threshold')
     ax.set_ylabel('F1-score')
     ax.set_title(f'Evaluation {args.type}')
-    plt.savefig(f'eval_{args.type}', bbox_inches='tight')
+    plt.savefig(f'eval_{args.type}{args.tag}', bbox_inches='tight')
 
 
 def compute_sampling_metrics(pred_points, gt_points, thresholds, eps=1e-8):
@@ -89,7 +90,7 @@ def compute_sampling_metrics(pred_points, gt_points, thresholds, eps=1e-8):
     return metrics
 
 def evaluate(predictions, mesh_gt, thresholds, args):
-    if args.type == "vox":
+    if args.type in ("vox", "implicit"):
         voxels_src = predictions
         H,W,D = voxels_src.shape[2:]
         vertices_src, faces_src = mcubes.marching_cubes(voxels_src.detach().cpu().squeeze().numpy(), isovalue=0.5)
@@ -112,7 +113,7 @@ def evaluate(predictions, mesh_gt, thresholds, args):
         pred_points = sample_points_from_meshes(predictions, args.n_points).cpu()
 
     gt_points = sample_points_from_meshes(mesh_gt, args.n_points)
-    if args.type == "vox":
+    if args.type in ("vox", "implicit"):
         gt_points = gt_points - gt_points.mean(1, keepdim=True)
     metrics = compute_sampling_metrics(pred_points, gt_points, thresholds)
     return metrics
@@ -146,7 +147,7 @@ def evaluate_model(args):
     avg_r_score = []
 
     if args.load_checkpoint:
-        checkpoint = torch.load(f'checkpoint_{args.type}.pth')
+        checkpoint = torch.load(f'checkpoint_{args.type}{args.tag}.pth')
         model.load_state_dict(checkpoint['model_state_dict'])
         print(f"Succesfully loaded iter {start_iter}")
     
@@ -165,10 +166,10 @@ def evaluate_model(args):
 
         with torch.no_grad():
             predictions = model(images_gt, args)
-        if args.type == "vox":
+        if args.type in ("vox", "implicit"):
             predictions = predictions.sigmoid()  # logits -> occupancy probabilities
 
-        empty = args.type == "vox" and predictions.max() < 0.5  # no surface for marching cubes -> score 0
+        empty = args.type in ("vox", "implicit") and predictions.max() < 0.5  # no surface for marching cubes -> score 0
         if empty:
             print(f"[{step}] empty voxel prediction")
             metrics = {f"{m}@{t:f}": torch.zeros(1) for m in ("Precision", "Recall", "F1") for t in thresholds}
@@ -177,12 +178,12 @@ def evaluate_model(args):
 
         if (step % args.vis_freq) == 0 and not empty:
             # input RGB | prediction | GT mesh
-            pred = {"vox": vis.vox_mesh, "point": vis.points,
+            pred = {"vox": vis.vox_mesh, "implicit": vis.vox_mesh, "point": vis.points,
                     "mesh": lambda p: vis.mesh(p.verts_packed(), p.faces_packed())}[args.type](predictions)
             gt = vis.mesh(mesh_gt.verts_packed(), mesh_gt.faces_packed())
             img = feed_dict['images'][0].cpu().numpy().repeat(2, 0).repeat(2, 1)  # 2x upsample for legibility
             rend = np.concatenate([(img * 255).astype(np.uint8)] + [vis.render(m, size=img.shape[0])[0] for m in (pred, gt)], axis=1)
-            plt.imsave(f'vis/{step}_{args.type}.png', rend)
+            plt.imsave(f'vis/{step}_{args.type}{args.tag}.png', rend)
       
 
         total_time = time.time() - start_time
