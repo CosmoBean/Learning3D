@@ -53,12 +53,26 @@ with torch.no_grad():
 n = step + 1
 recall, share_gt, share_pred = 100 * covered / total, 100 * share_gt / n, 100 * share_pred / n
 centers = (np.arange(BINS) + 0.5) / BINS
-fig, (a, b) = plt.subplots(1, 2, figsize=(10, 3.5))
-a.barh(centers, recall, height=0.08)
-a.set(xlabel="GT surface covered within 0.05 (%)", ylabel="height (0 = floor, 1 = top)", title="Coverage by height")
-b.plot(share_gt, centers, "o-", label="GT surface")
-b.plot(share_pred, centers, "s-", label="predicted points")
-b.set(xlabel="share of points (%)", title="Where points are placed", yticks=[]); b.legend()
-plt.savefig("output/q25_height.png", bbox_inches="tight")
+BLUE, ORANGE, INK, GRID = "#2a78d6", "#eb6834", "#333333", "#e6e6e3"
+plt.rcParams.update({"font.size": 10, "text.color": INK, "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK})
+fig, (a, b) = plt.subplots(1, 2, figsize=(10, 3.8), sharey=True)
+for ax in (a, b):
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="x", color=GRID, linewidth=1)
+    ax.set_axisbelow(True)
+
+a.barh(centers, recall, height=0.07, color=BLUE)
+for i in (0, int(recall.argmax()), BINS - 1):  # label the ends and the best band only
+    a.text(recall[i] + 1.5, centers[i], f"{recall[i]:.0f}%", va="center", fontsize=9)
+a.set(xlim=(0, 100), xlabel="Recall at 0.05 (%)", ylabel="Normalized height",
+      yticks=[0, 0.5, 1], yticklabels=["0 (floor)", "0.5", "1 (top)"])
+a.set_title("Recall by height", loc="left", fontweight="bold")
+
+for y, label, color in ((share_gt, "Ground truth", BLUE), (share_pred, "Prediction", ORANGE)):
+    b.plot(y, centers, "o-", color=color, linewidth=2, markersize=6, label=label)
+b.set(xlim=(0, 30), xlabel="Share of points (%)")
+b.set_title("Point distribution by height", loc="left", fontweight="bold")
+b.legend(frameon=False, loc="upper right")
+plt.savefig("output/q25_height.png", bbox_inches="tight", dpi=150)
 for c, r, g, p in zip(centers, recall, share_gt, share_pred):
     print(f"height {c:.2f}: covered {r:5.1f}%  GT share {g:5.1f}%  pred share {p:5.1f}%")

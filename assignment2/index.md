@@ -99,11 +99,11 @@ Where does the point model go wrong? Points are coloured by error: blue is right
 
 ![error colouring](output/q25_error.png)
 
-Error by height over all test chairs (0 = floor, 1 = top):
+Recall and point distribution by height, over all 678 test chairs:
 
 ![error by height](output/q25_height.png)
 
-The model gets the middle right but misses the ends: it covers 86% of the middle of the chair but only 62% of the feet and 68% of the top of the back. It puts 74% of its points around the seat, where only 57% of the chair is. Seats look alike in every chair, so that's a safe guess; legs vary a lot, so the model hedges.
+Recall is about 85% in the middle of the chair but drops to 62% at the feet and 68% at the top of the backrest. The model places 74% of its points in the seat region (height 0.3 to 0.7), which holds only 57% of the surface. Seats look alike across chairs, so this is a safe bet under chamfer loss; legs and backrests vary more, so the model spreads fewer points there.
 
 ## 3.1 Implicit network
 An MLP takes the image features and one 3D point, and says whether the point is inside the chair. Asking it at every point of a 32³ grid gives a voxel grid, trained and tested like 2.1.
