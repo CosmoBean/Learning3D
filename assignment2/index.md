@@ -104,7 +104,7 @@ Recall and point distribution by height, over all 678 test chairs:
 Recall is about 85% in the middle of the chair but drops to 62% at the feet and 68% at the top of the backrest. The model places 74% of its points in the seat region (height 0.3 to 0.7), which holds only 57% of the surface. Seats look alike across chairs, so this is a safe bet under chamfer loss; legs and backrests vary more, so the model spreads fewer points there.
 
 ## 3.1 Implicit network
-An MLP takes the image features and one 3D point, and says whether the point is inside the chair. Asking it at every point of a 32³ grid gives a voxel grid, trained and tested like 2.1.
+An MLP takes the image features and one 3D point, and says whether the point is inside the chair. Asking it at every point of a 32x32x32 grid gives a voxel grid, trained and tested like 2.1.
 ```
 image features (512) + point (x, y, z)
 Linear 515->512, ReLU
@@ -122,4 +122,4 @@ Linear 512->1
 
 ![F1 implicit](eval_implicit.png)
 
-The implicit model is much worse. It makes smooth blobs and loses thin parts like legs, and 80 chairs come out empty. A plain MLP on raw (x, y, z) has trouble with sharp detail; adding a positional encoding (as in NeRF) is the usual fix. Its one advantage is size: 14× smaller than the voxel decoder.
+The implicit model is much worse. It makes smooth blobs and loses thin parts like legs, and 80 chairs come out empty. A plain MLP on raw (x, y, z) has trouble with sharp detail; adding a positional encoding (as in NeRF) is the usual fix. Its one advantage is size: 14x smaller than the voxel decoder.
