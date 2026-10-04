@@ -143,7 +143,7 @@ Linear 512->3, tanh
 
 ![F1 parametric](output/eval_parametric.png)
 
-The parametric model is worse. It bends a single flat sheet into the chair, so the sheet has to stretch between the seat, back and legs, and points land in the gaps. Using several sheets (as in AtlasNet) is the usual fix. Its advantages are size (6x smaller than the point decoder) and that it can make any number of points.
+The parametric model is worse. It bends a flat sheet into the chair, so the sheet has to stretch between the seat, back and legs, and points land in the gaps. Its advantages are size (6x smaller than the point decoder) and that it can make any number of points.
 
 ## 3.3 Extended dataset
 Train the point model from 2.2 on chairs, planes and cars (12,886 objects instead of 6,100), 10k steps. Both models are tested on the 3-class test set.
