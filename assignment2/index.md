@@ -24,11 +24,11 @@ A ResNet18 turns the image into 512 numbers, and a decoder turns those into a 3D
 
 ## 2.1 Image to voxel grid
 ```
-Linear 512->16384, ReLU                    -> reshaped to 256×4×4×4
-ConvTranspose3d 256->128, k4 s2, BN, ReLU  -> 128×8×8×8
-ConvTranspose3d 128->64,  k4 s2, BN, ReLU  -> 64×16×16×16
-ConvTranspose3d 64->32,   k4 s2, BN, ReLU  -> 32×32×32×32
-Conv3d 32->1, k3                           -> 1×32×32×32 logits
+Linear 512->16384, ReLU
+ConvTranspose3d 256->128, k4 s2, BN, ReLU
+ConvTranspose3d 128->64,  k4 s2, BN, ReLU
+ConvTranspose3d 64->32,   k4 s2, BN, ReLU
+Conv3d 32->1, k3
 ```
 
 **F1@0.05 = 70.3**
@@ -43,7 +43,7 @@ Thin chairs (bottom row) are hard: most voxels are empty, so the model leaves th
 ```
 Linear 512->1024, ReLU
 Linear 1024->1024, ReLU
-Linear 1024->3000, tanh                    -> reshaped to 1000×3 points
+Linear 1024->3000, tanh
 ```
 
 **F1@0.05 = 79.9**
@@ -56,7 +56,7 @@ Linear 1024->3000, tanh                    -> reshaped to 1000×3 points
 ```
 Linear 512->1024, ReLU
 Linear 1024->1024, ReLU
-Linear 1024->7686                          -> reshaped to 2562×3 vertex offsets
+Linear 1024->7686
 ```
 The offsets move the points of a sphere mesh.
 
@@ -106,11 +106,11 @@ Recall is about 85% in the middle of the chair but drops to 62% at the feet and 
 ## 3.1 Implicit network
 An MLP takes the image features and one 3D point, and says whether the point is inside the chair. Asking it at every point of a 32³ grid gives a voxel grid, trained and tested like 2.1.
 ```
-image features (512) + point (x, y, z)     -> 515
+image features (512) + point (x, y, z)
 Linear 515->512, ReLU
 Linear 512->512, ReLU
 Linear 512->512, ReLU
-Linear 512->1                              -> inside / outside score
+Linear 512->1
 ```
 
 ![voxel vs implicit](output/q31_vox_vs_implicit.png)
