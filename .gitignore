@@ -46,3 +46,4 @@ data/
 ckpt_*/
 logs/
 assignment2/vis/
+*.zip
