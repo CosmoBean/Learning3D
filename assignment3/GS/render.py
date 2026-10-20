@@ -19,7 +19,8 @@ def create_renders(args):
     azims = np.linspace(-180, 180, num_views)
     elevs = np.linspace(-180, 180, num_views)
 
-    debug_root = os.path.join(args.out_path, "part_5_render")
+    name = "part_7_1_render" if args.use_sh else "part_5_render"
+    debug_root = os.path.join(args.out_path, name)
     if not os.path.exists(debug_root):
         os.makedirs(debug_root, exist_ok=True)
 
@@ -28,6 +29,10 @@ def create_renders(args):
         load_path=args.data_path, init_type="gaussians",
         device=args.device
     )
+
+    # [Q 7.1] Only use the view dependent spherical harmonics when requested
+    if not args.use_sh:
+        gaussians.spherical_harmonics = None
 
     # Preprocessing for ease of rendering
     new_points = gaussians.means - gaussians.means.mean(dim=0, keepdims=True)
@@ -54,7 +59,10 @@ def create_renders(args):
             # HINT: Set bg_colour to (1.0, 1.0, 1.0)
             # HINT: Get per_splat from args.gaussians_per_splat
             # HINT: img_size and camera are available above
-            img, depth, mask = None
+            img, depth, mask = scene.render(
+                camera, per_splat=args.gaussians_per_splat,
+                img_size=img_size, bg_colour=(1.0, 1.0, 1.0),
+            )
 
         debug_path = os.path.join(debug_root, f"{i:03d}.png")
         img = img.detach().cpu().numpy()
@@ -74,7 +82,7 @@ def create_renders(args):
 
         imgs.append(np.array(resized))
 
-    gif_path = os.path.join(args.out_path, "part_5_render.gif")
+    gif_path = os.path.join(args.out_path, f"{name}.gif")
     imageio.mimwrite(gif_path, imgs, duration=1000.0*(1/10.0), loop=0)
 
 def get_args():
@@ -106,6 +114,10 @@ def get_args():
             "if more gaussians are splat per function call, but at the cost of higher GPU "
             "memory consumption."
         )
+    )
+    parser.add_argument(
+        "--use_sh", action="store_true",
+        help="[Q 7.1] Render view dependent colours using all spherical harmonic components."
     )
     parser.add_argument("--device", default="cuda", type=str, choices=["cuda", "cpu"])
     args = parser.parse_args()
