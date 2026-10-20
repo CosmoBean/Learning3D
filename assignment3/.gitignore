@@ -11,3 +11,9 @@ soln/images/
 soln/ta_images/
 soln/data/
 soln/points_checkpoint
+.venv
+checkpoints_*
+volsdf_checkpoint
+nerf/data/*.png
+nerf/data/*_license.txt
+GS/data/materials
