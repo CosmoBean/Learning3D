@@ -1,0 +1,10 @@
+hydra-core
+Pillow
+requests
+imageio
+matplotlib
+numpy<2.0.0
+PyMCubes
+tqdm
+plyfile
+scikit-image
