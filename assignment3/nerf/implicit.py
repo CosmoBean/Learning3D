@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn.functional as F
 from torch import autograd
@@ -262,7 +264,60 @@ class NeuralRadianceField(torch.nn.Module):
         embedding_dim_xyz = self.harmonic_embedding_xyz.output_dim
         embedding_dim_dir = self.harmonic_embedding_dir.output_dim
 
-        pass
+        self.mlp_xyz = MLPWithInputSkips(
+            cfg.n_layers_xyz,
+            embedding_dim_xyz,
+            cfg.n_hidden_neurons_xyz,
+            embedding_dim_xyz,
+            cfg.n_hidden_neurons_xyz,
+            input_skips=cfg.append_xyz,
+        )
+        self.density_head = torch.nn.Linear(cfg.n_hidden_neurons_xyz, 1)
+
+        # ReLU density can collapse to zero everywhere on dark scenes (e.g. materials); softplus cannot
+        self.density_activation = torch.nn.Softplus() if cfg.get('density_activation', 'relu') == 'softplus' else torch.nn.ReLU()
+
+        # (Q4.1) Optionally condition color on the viewing direction
+        self.view_dependence = cfg.get('view_dependence', False)
+        color_input_dim = cfg.n_hidden_neurons_xyz + (embedding_dim_dir if self.view_dependence else 0)
+        self.color_head = torch.nn.Sequential(
+            torch.nn.Linear(color_input_dim, cfg.n_hidden_neurons_dir),
+            torch.nn.ReLU(True),
+            torch.nn.Linear(cfg.n_hidden_neurons_dir, 3),
+            torch.nn.Sigmoid(),
+        )
+
+    def forward(self, ray_bundle):
+        points = ray_bundle.sample_points.view(-1, 3)
+        embedding = self.harmonic_embedding_xyz(points)
+        features = torch.relu(self.mlp_xyz(embedding, embedding))
+
+        color_input = features
+        if self.view_dependence:
+            directions = ray_bundle.directions[:, None].expand(ray_bundle.sample_points.shape)
+            color_input = torch.cat(
+                [features, self.harmonic_embedding_dir(directions.reshape(-1, 3))], dim=-1
+            )
+
+        return {
+            'density': self.density_activation(self.density_head(features)),
+            'feature': self.color_head(color_input),
+        }
+
+
+# (Q4.2) Separate coarse and fine NeRFs for hierarchical sampling
+class NeuralRadianceFieldCoarseFine(torch.nn.Module):
+    def __init__(
+        self,
+        cfg,
+    ):
+        super().__init__()
+
+        self.coarse = NeuralRadianceField(cfg)
+        self.fine = NeuralRadianceField(cfg)
+
+    def forward(self, ray_bundle):
+        return self.fine(ray_bundle)
 
 
 class NeuralSurface(torch.nn.Module):
@@ -272,7 +327,50 @@ class NeuralSurface(torch.nn.Module):
     ):
         super().__init__()
         # TODO (Q4.3): Implement Neural Surface MLP to output per-point SDF
+        self.harmonic_embedding_xyz = HarmonicEmbedding(3, cfg.n_harmonic_functions_xyz)
+        embedding_dim_xyz = self.harmonic_embedding_xyz.output_dim
+
+        self.mlp_distance = MLPWithInputSkips(
+            cfg.n_layers_distance,
+            embedding_dim_xyz,
+            cfg.n_hidden_neurons_distance,
+            embedding_dim_xyz,
+            cfg.n_hidden_neurons_distance,
+            input_skips=cfg.append_distance,
+        )
+        self.distance_head = torch.nn.Linear(cfg.n_hidden_neurons_distance, 1)
+        self._geometric_init(embedding_dim_xyz, cfg.get('init_radius', 1.0))
+
         # TODO (Q4.3): Implement Neural Surface MLP to output per-point color
+        self.mlp_color = MLPWithInputSkips(
+            cfg.n_layers_color,
+            cfg.n_hidden_neurons_distance,
+            3,
+            embedding_dim_xyz,
+            cfg.n_hidden_neurons_color,
+            input_skips=cfg.append_color,
+        )
+
+    def _geometric_init(self, embedding_dim, radius):
+        # Initialize the distance network to approximate the SDF of a sphere (Atzmon & Lipman, SAL / IDR).
+        # Only the raw xyz part of the embedding (its last 3 entries) is used at initialization.
+        for li, layer in enumerate(self.mlp_distance.mlp):
+            linear = layer[0] if isinstance(layer, torch.nn.Sequential) else layer
+            torch.nn.init.normal_(linear.weight, 0.0, (2.0 / linear.out_features) ** 0.5)
+            torch.nn.init.zeros_(linear.bias)
+
+            if li == 0:
+                torch.nn.init.zeros_(linear.weight[:, :embedding_dim - 3])
+            elif li in self.mlp_distance._input_skips:
+                torch.nn.init.zeros_(linear.weight[:, -embedding_dim:-3])
+
+        n_hidden = self.distance_head.in_features
+        torch.nn.init.normal_(self.distance_head.weight, (math.pi / n_hidden) ** 0.5, 1e-4)
+        torch.nn.init.constant_(self.distance_head.bias, -radius)
+
+    def _get_features(self, points):
+        embedding = self.harmonic_embedding_xyz(points)
+        return torch.relu(self.mlp_distance(embedding, embedding)), embedding
 
     def get_distance(
         self,
@@ -284,7 +382,8 @@ class NeuralSurface(torch.nn.Module):
             distance: N X 1 Tensor, where N is number of input points
         '''
         points = points.view(-1, 3)
-        pass
+        features, _ = self._get_features(points)
+        return self.distance_head(features)
     
     def get_color(
         self,
@@ -296,7 +395,7 @@ class NeuralSurface(torch.nn.Module):
             distance: N X 3 Tensor, where N is number of input points
         '''
         points = points.view(-1, 3)
-        pass
+        return self.get_distance_color(points)[1]
     
     def get_distance_color(
         self,
@@ -309,6 +408,11 @@ class NeuralSurface(torch.nn.Module):
         You may just implement this by independent calls to get_distance, get_color
             but, depending on your MLP implementation, it maybe more efficient to share some computation
         '''
+        points = points.view(-1, 3)
+        features, embedding = self._get_features(points)
+        distance = self.distance_head(features)
+        color = torch.sigmoid(self.mlp_color(features, embedding))
+        return distance, color
         
     def forward(self, points):
         return self.get_distance(points)
@@ -339,5 +443,6 @@ class NeuralSurface(torch.nn.Module):
 implicit_dict = {
     'sdf_volume': SDFVolume,
     'nerf': NeuralRadianceField,
+    'nerf_coarse_fine': NeuralRadianceFieldCoarseFine,
     'neural_surface': NeuralSurface,
 }

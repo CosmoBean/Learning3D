@@ -10,11 +10,12 @@ training:
   lr_scheduler_step_size: 50
   lr_scheduler_gamma: 0.8
 
-  checkpoint_path: ./checkpoints
+  checkpoint_path: ./checkpoints_nerf_materials_highres
   checkpoint_interval: 50
   resume: True
 
   render_interval: 10
+  output_gif: images/part_4_1_highres.gif
 
 data:
   image_size: [400, 400]
@@ -42,4 +43,6 @@ implicit_function:
   density_noise_std: 0.0
   n_layers_xyz: 6
   append_xyz: [3]
+  view_dependence: True
+  density_activation: softplus
 
