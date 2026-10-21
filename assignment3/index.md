@@ -27,19 +27,17 @@
 
 ![part 2](nerf/images/part_2.gif)
 
-Matches the TA GIF.
-
 ## 3. Optimizing a Neural Radiance Field
 
 ![part 3](nerf/images/part_3.gif)
 
-## 4.1 View dependence (extra credit)
+## 4.1 View dependence
 
 ![part 4.1](nerf/images/part_4_1.gif)
 
 **Trade-off.** With more view dependence the network can explain each training image by changing color with direction instead of getting the shape right. It fits the training views well but gives wrong colors and floaters in new views. Keeping density independent of direction, using only 2 direction frequencies, and a small color head limit this.
 
-## 4.2 Coarse and fine sampling (extra credit)
+## 4.2 Coarse and fine sampling
 
 Part 3 on the left, coarse and fine on the right.
 
@@ -52,7 +50,7 @@ Part 3 on the left, coarse and fine on the right.
 
 **Trade-off.** Coarse and fine is more accurate because more points land near the surface instead of in empty space. It costs more per step since it evaluates two networks on 256 points per ray instead of one network on 128.
 
-## 4.3 VolSDF (extra credit)
+## 4.3 VolSDF
 
 ![part 4.3 geometry](nerf/images/part_4_3_geometry.gif) ![part 4.3](nerf/images/part_4_3.gif)
 
@@ -101,7 +99,7 @@ Without spherical harmonics (5) on the left, with them on the right.
 - **Top of the seat.** The cushion looks shiny, with bright and dark patches that depend on the view. Without spherical harmonics it is evenly lit.
 - **Underside.** Almost the same. The wood and beige cloth are matte, so their color barely changes with direction.
 
-## 7.2 Training on a harder scene (extra credit)
+## 7.2 Training on a harder scene
 
 | Method | Iterations | PSNR | SSIM |
 |---|---|---|---|
