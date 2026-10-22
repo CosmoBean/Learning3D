@@ -33,6 +33,8 @@
 
 ## 4.1 View dependence
 
+Trained on the materials scene.
+
 ![part 4.1](nerf/images/part_4_1.gif)
 
 **Trade-off:** With more view dependence the network can explain each training image by changing color with direction instead of getting the shape right. It fits the training views well but gives wrong colors and floaters in new views. Keeping density independent of direction, using only 2 direction frequencies, and a small color head limit this.
@@ -93,6 +95,8 @@ Without spherical harmonics (5) on the left, with them on the right.
 
 ![part 5](GS/output/part_5_render.gif) ![part 7.1](GS/output/part_7_1_render.gif)
 
+Three pairs, left to right: front, top, underside. In each pair the left image is without spherical harmonics and the right is with them.
+
 ![comparison](output/q71_comparison.png)
 
 - **Front of the chair:** The fabric is darker green with a sharper gold pattern. Without spherical harmonics it is a flat, washed-out green, because the first coefficient is only the average color over all directions.
@@ -116,6 +120,8 @@ Without spherical harmonics (5) on the left, with them on the right.
 
 ![improved final](GS/output/part_7_2_training_final_renders.gif)
 
+**Comparison:** The baseline never reaches the objects. Its Gaussians start in a small blob at the center and only spread into a few blurry blobs. The improved run shows noisy versions of all the objects within the first few hundred iterations. It briefly goes dark at iteration 1000 when opacities are reset, then recovers with sharp edges and reflections. This matches the PSNR going from 18.29 to 24.24 and SSIM from 0.653 to 0.890.
+
 | Parameter | Learning rate (improved) |
 |---|---|
 | Opacities | 0.05 |
@@ -132,3 +138,7 @@ Without spherical harmonics (5) on the left, with them on the right.
 - **Learning rate schedule:** Exponential decay for the means.
 - **Densification and pruning:** Every 100 iterations from 5% to 60% of training, Gaussians with large position gradients are copied (if small) or split (if large), nearly transparent ones are removed, and opacities are reset once at iteration 1000. The count grows from 10k to about 27k.
 - **More iterations:** 2000 instead of 1000.
+
+# References
+
+1. B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi, R. Ng. NeRF: Representing Scenes as Neural Radiance Fields for View Synthesis. ECCV 2020. [arXiv:2003.08934](https://arxiv.org/abs/2003.08934)
