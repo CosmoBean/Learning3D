@@ -43,7 +43,12 @@ Part 3 on the left, coarse and fine on the right.
 
 ![part 3](nerf/images/part_3.gif) ![part 4.2](nerf/images/part_4_2.gif)
 
-**Trade-off:** Coarse and fine is more accurate because more points land near the surface instead of in empty space. Test PSNR goes from 24.01 to 24.50. It is slower, 12.0 ms per training step vs 7.0 ms, because it runs two networks on 256 points per ray (64 coarse, 192 fine) instead of one network on 128.
+| | Points per ray | Time per training step | Test PSNR (200 views) |
+|---|---|---|---|
+| Part 3 | 128 | 7.0 ms | 24.01 |
+| Coarse and fine | 64 coarse, 192 fine | 12.0 ms (1.7x) | 24.50 |
+
+**Trade-off:** Coarse and fine is more accurate because more points land near the surface instead of in empty space. It costs more per step since it evaluates two networks on 256 points per ray instead of one network on 128.
 
 ## 4.3 VolSDF
 
