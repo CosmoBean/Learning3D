@@ -95,13 +95,19 @@ Without spherical harmonics (5) on the left, with them on the right.
 
 ![part 5](GS/output/part_5_render.gif) ![part 7.1](GS/output/part_7_1_render.gif)
 
-Three pairs, left to right: front, top, underside. In each pair the left image is without spherical harmonics and the right is with them.
+In each pair the left image is without spherical harmonics and the right is with them.
 
-![comparison](output/q71_comparison.png)
+![front](output/q71_front.png)
 
-- **Front of the chair:** The fabric is darker green with a sharper gold pattern. Without spherical harmonics it is a flat, washed-out green, because the first coefficient is only the average color over all directions.
-- **Top of the seat:** The cushion looks shiny, with bright and dark patches that depend on the view. Without spherical harmonics it is evenly lit.
-- **Underside:** Almost the same. The wood and beige cloth are matte, so their color barely changes with direction.
+**Front of the chair:** The fabric is darker green with a sharper gold pattern. Without spherical harmonics it is a flat, washed-out green, because the first coefficient is only the average color over all directions.
+
+![top](output/q71_top.png)
+
+**Top of the seat:** The cushion looks shiny, with bright and dark patches that depend on the view. Without spherical harmonics it is evenly lit.
+
+![underside](output/q71_underside.png)
+
+**Underside:** Almost the same. The wood and beige cloth are matte, so their color barely changes with direction.
 
 ## 7.2 Training on a harder scene
 
