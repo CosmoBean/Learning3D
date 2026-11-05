@@ -44,11 +44,11 @@ ray_directions: (2, 8, 3, 224, 224)
 plucker: (2, 8, 6, 224, 224)
 ```
 
-**Canonicalization:** All poses are expressed relative to the first sampled camera, so camera 0 becomes the identity. Translations, depth and points are then divided by the distance from camera 0 to the valid-point centroid, so every sample has the same frame and roughly the same scale.
+**Canonicalization:** All poses are expressed relative to the first sampled camera, so camera 0 becomes the identity. Translations, depth and points are then divided by the distance from camera 0 to the valid-point centroid, so every sample has the same frame and scale (valid-point centroid at distance 1).
 
-**World-space ray directions:** Each pixel (u, v, 1) is mapped to a camera-space direction with K⁻¹, rotated into the canonical world frame with the camera rotation, and normalized. The ray origin is the camera center.
+**World-space ray directions:** Each pixel (u, v, 1) is mapped to a camera-space direction with K⁻¹, rotated into the canonical world frame with the camera rotation, and normalized.
 
-**Plücker moment:** The moment is m = o × d. Together with d it describes the ray as a line, independent of which point on the line is used as the origin, and it encodes where the ray is in space and not just which way it points.
+**Plücker moment:** The moment is m = o × d. It does not depend on which point on the ray is used as o. Together with d it fixes where the line is, not just its direction.
 
 # 2. Novel-View Synthesis with Mini-LVSM
 
@@ -60,7 +60,7 @@ Final overfit PSNR: 30.92 dB (2000 steps on one batch).
 
 ## 2.2 Training and evaluation
 
-**Training settings:** Default `configs/lvsm.json`: 8 views per sample (2 sources, 6 targets), 224px, batch size 4, patch size 8, width 384, 8 blocks, head dim 64, AdamW with lr 2e-4, weight decay 0.05, 200 warmup steps and cosine decay, bf16 autocast, 100 epochs (5,600 steps) on one H100.
+**Training settings:** Default `configs/lvsm.json`: 8 views per sample (2 sources, 6 targets), 224px, batch size 4, patch size 8, width 384, 8 blocks, head dim 64, AdamW with lr 2e-4, weight decay 0.05, 200 warmup steps and cosine decay, bf16 autocast, 100 epochs (5,600 steps).
 
 ![LVSM curves](images/q2_curves.png)
 
@@ -106,7 +106,7 @@ Evaluation visualizations (columns: source views, ground truth, prediction):
 
 **Number of source views:** PSNR goes from 15.19 dB with 1 source to 16.13 dB with 2 and 16.88 dB with 4, although the model was only trained with 2. More sources cover more of the target view, so less of it has to be guessed.
 
-**Ray conditioning:** With shuffled or zero target rays, PSNR drops by about 4 dB for every source count and more sources no longer help. The model really uses the target rays to decide what to render. With zero rays it outputs a flat average color of the scene, which scores a little higher than shuffled rays because shuffled rays confidently render the wrong view.
+**Ray conditioning:** With shuffled or zero target rays, PSNR drops by 2.7 to 5.3 dB (more with more sources) and more sources no longer help. The model really uses the target rays to decide what to render. With zero rays it outputs a flat average color of the scene, which scores a little higher than shuffled rays because shuffled rays render a blurry image of the wrong view.
 
 # 3. Multi-View Geometry with Mini-VGGT
 
@@ -118,7 +118,7 @@ Evaluation visualizations (columns: source views, ground truth, prediction):
 
 ## 3.2 Training and evaluation
 
-**Training settings:** Default `configs/vggt.json`: frozen DINOv2 ViT-B/14, 8 frame/global block pairs (width 384, 6 heads), 8 views from a 32-frame window, 224px, batch size 16, AdamW with lr 6e-4, weight decay 0.01, 10 warmup epochs and cosine decay to 5% of the peak lr, loss weights camera 5 and depth 1, 1000 epochs (14,000 steps). This took about 3.8 hours on one H100 (shared with LVSM training for the first 40 minutes). `best.pt` is from epoch 788.
+**Training settings:** Default `configs/vggt.json`: frozen DINOv2 ViT-B/14, 8 frame/global block pairs (width 384, 6 heads), 8 views from a 32-frame window, 224px, batch size 16, AdamW with lr 6e-4, weight decay 0.01, 10 warmup epochs and cosine decay to 5% of the peak lr, loss weights camera 5 and depth 1, 1000 epochs (14,000 steps). Training took about 3.8 hours on one H100. `best.pt` is from epoch 788.
 
 ![VGGT training loss](images/q3_train_loss.png)
 
@@ -148,4 +148,4 @@ GT and predicted geometry on four validation scenes:
 
 ![val scene 3](images/q3_val_3.png)
 
-**Errors on held-out scenes:** Depth transfers well to new scenes (AbsRel about 0.15, δ1 about 0.8), and the overall layout of each room is recovered. Most of the error is in the cameras. Rotation is reasonable (AUC@30 about 0.7), but translation direction is poor (AUC@30 0.14–0.20). The views come from a 32-frame window, so baselines are short and the translation direction is ambiguous, and the small model trained on 224 scenes is still underfitting: training camera loss is higher than validation and was still going down. Wrong camera poses show up as views that are misplaced or bent relative to each other, so walls and floors from different views do not line up, as in the hallway scene above. Predicted depth is also smoother than GT and loses thin structures and sharp edges.
+**Errors on held-out scenes:** Depth transfers well to new scenes (AbsRel about 0.15, δ1 about 0.8) and the room layout is recovered. Most of the error is in the cameras. Rotation is reasonable (AUC@30 about 0.7), but translation direction is poor (AUC@30 0.14–0.20), likely because the 8 views come from a 32-frame window and the short baselines make the direction ambiguous. Wrong poses make surfaces from different views misalign (scene 280b83fcf3). Predicted depth is smoother than GT and loses thin structures such as chair legs.
