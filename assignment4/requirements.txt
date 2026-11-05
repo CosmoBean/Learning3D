@@ -1,0 +1,11 @@
+# Shared ScanNet++ preprocessing and model runtime.
+# Install the appropriate CPU/CUDA torch build first.
+# Optional test/extraction tools are pyproject.toml extras.
+torch>=2.2,<3
+torchvision>=0.17,<1
+filelock>=3,<4
+numpy>=1.26,<3
+pillow>=10,<13
+opencv-python-headless>=4.9,<6
+matplotlib>=3.8,<4
+plotly>=6,<7

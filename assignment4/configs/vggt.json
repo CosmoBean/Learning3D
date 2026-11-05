@@ -1,0 +1,35 @@
+{
+  "data_config": "configs/scannetpp/iphone/data.json",
+  "data_overrides": {
+    "num_views": 8,
+    "sampling_range": 32,
+    "eval_num_frames": 32,
+    "batch_size": 16,
+    "num_workers": 8
+  },
+  "model": {
+    "embed_dim": 384,
+    "num_heads": 6,
+    "num_layers": 8,
+    "predict_points": false,
+    "encoder_name": "dinov2_vitb14",
+    "image_size": 224
+  },
+  "loss": {
+    "camera": 5.0,
+    "depth": 1.0
+  },
+  "training": {
+    "epochs": 1000,
+    "learning_rate": 0.0006,
+    "weight_decay": 0.01,
+    "output_dir": "outputs/vggt",
+    "overfit_scenes": 1,
+    "overfit_steps_per_epoch": 25,
+    "min_lr_ratio": 0.05,
+    "log_every": 10,
+    "warmup_epochs": 10,
+    "overfit_epochs": 40,
+    "overfit_learning_rate": 0.001
+  }
+}

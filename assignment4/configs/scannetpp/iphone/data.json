@@ -1,0 +1,12 @@
+{
+  "root": "data/scannetpp/processed",
+  "eval_root": "data/scannetpp/prepared_eval",
+  "eval_num_frames": 128,
+  "split_file": "configs/scannetpp/iphone/scene_splits.json",
+  "num_views": 8,
+  "sampling_range": 32,
+  "image_size": 224,
+  "batch_size": 2,
+  "num_workers": 4,
+  "seed": 825
+}

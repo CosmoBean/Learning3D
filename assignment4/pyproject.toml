@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "a4-multiview-data"
+version = "0.1.0"
+description = "Shared ScanNet++ data preparation for the 16-825 multi-view assignment"
+requires-python = ">=3.10"
+dependencies = ["torch>=2.2,<3", "torchvision>=0.17,<1", "filelock>=3,<4", "numpy>=1.26,<3", "pillow>=10,<13", "opencv-python-headless>=4.9,<6", "matplotlib>=3.8,<4", "plotly>=6,<7"]
+
+[project.optional-dependencies]
+scannetpp = ["lz4==4.4.5"]
+reference = ["huggingface_hub>=0.34,<1", "einops>=0.8,<1"]
+test = ["pytest>=8,<10", "ruff>=0.9,<1"]
+
+[tool.setuptools.packages.find]
+include = ["a4data*", "models*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = ["markdown", "playwright"]
+
+[tool.uv]
+python-preference = "managed"
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchvision = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
