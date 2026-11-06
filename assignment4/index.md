@@ -9,21 +9,21 @@
 
 **Example 1**
 
-![Unprojection example 1](images/q1_unproj_0_crop.png)
+![Unprojection example 1](images/q1_unproj_0_wide.png)
 
 **Example 2**
 
-![Unprojection example 2](images/q1_unproj_1_crop.png)
+![Unprojection example 2](images/q1_unproj_1_wide.png)
 
 ## Canonicalization
 
 **Example 1.** First camera center: `(0, 0, 0)`; valid-point centroid distance: `1.000`.
 
-![Canonicalization example 1](images/q1_canon_0_crop.png)
+![Canonicalization example 1](images/q1_canon_0_wide.png)
 
 **Example 2.** First camera center: `(0, 0, 0)`; valid-point centroid distance: `1.000`.
 
-![Canonicalization example 2](images/q1_canon_1_crop.png)
+![Canonicalization example 2](images/q1_canon_1_wide.png)
 
 ## `check_data.py`
 
