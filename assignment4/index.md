@@ -1,28 +1,31 @@
 # 16-825 Assignment 4
 
-**AndrewId**: sbandred
-
+**Andrew ID:** sbandred
 **Name:** Sri Datta Bandreddi
 
 # 1. Multi-View Data Preprocessing
 
 ## Unprojection
 
-Points and cameras in the original world frame (meters).
+**Example 1**
 
-![unprojection 0](images/q1_unproj_0.png)
+![Unprojection example 1](images/q1_unproj_0_crop.png)
 
-![unprojection 1](images/q1_unproj_1.png)
+**Example 2**
+
+![Unprojection example 2](images/q1_unproj_1_crop.png)
 
 ## Canonicalization
 
-Same scenes after canonicalization. The panel on the right shows the first camera center (0, 0, 0) and the valid-point centroid distance (1.000).
+**Example 1.** First camera center: `(0, 0, 0)`; valid-point centroid distance: `1.000`.
 
-![canonicalization 0](images/q1_canon_0.png)
+![Canonicalization example 1](images/q1_canon_0_crop.png)
 
-![canonicalization 1](images/q1_canon_1.png)
+**Example 2.** First camera center: `(0, 0, 0)`; valid-point centroid distance: `1.000`.
 
-## check_data.py
+![Canonicalization example 2](images/q1_canon_1_crop.png)
+
+## `check_data.py`
 
 ```text
 {"sequence_name": "e050c15a8d_frame_007080", "views": 8, "resolution": 224, "valid_depth_fraction": 0.9779127240180969, "max_reprojection_error_px": 0.00010844774078577757, "max_ray_reprojection_error_px": 9.41436446737498e-05, "centroid_distance": 1.0}
@@ -44,88 +47,90 @@ ray_directions: (2, 8, 3, 224, 224)
 plucker: (2, 8, 6, 224, 224)
 ```
 
-**Canonicalization:** All poses are expressed relative to the first sampled camera, so camera 0 becomes the identity. Translations, depth and points are then divided by the distance from camera 0 to the valid-point centroid, so every sample has the same frame and scale (valid-point centroid at distance 1).
-
-**World-space ray directions:** Each pixel (u, v, 1) is mapped to a camera-space direction with K⁻¹, rotated into the canonical world frame with the camera rotation, and normalized.
-
-**Plücker moment:** The moment is m = o × d. It does not depend on which point on the ray is used as o. Together with d it fixes where the line is, not just its direction.
+Canonicalization expresses every view in camera 0's frame and scales the scene so the valid-point centroid is one unit away. World-space ray directions are normalized pixel rays transformed by the camera rotation. Plücker rays are `(d, o × d)`.
 
 # 2. Novel-View Synthesis with Mini-LVSM
 
 ## 2.1 Overfitting
 
-Final overfit PSNR: 30.92 dB (2000 steps on one batch).
+Final overfit PSNR: **30.92 dB** after 2,000 steps on one batch.
 
-![LVSM overfit](images/q2_overfit.png)
+Panels are arranged left to right as **source view(s)**, **ground truth**, and **prediction**.
+
+![LVSM overfit visualization](images/q2_overfit.png)
 
 ## 2.2 Training and evaluation
 
-**Training settings:** Default `configs/lvsm.json`: 8 views per sample (2 sources, 6 targets), 224px, batch size 4, patch size 8, width 384, 8 blocks, head dim 64, AdamW with lr 2e-4, weight decay 0.05, 200 warmup steps and cosine decay, bf16 autocast, 100 epochs (5,600 steps).
+**Training settings:** 2 source and 6 target views, 224px images, batch size 4, patch size 8, width 384, 8 blocks, head dimension 64, and bfloat16 autocast. AdamW used `lr=2e-4`, weight decay `0.05`, 200 warmup steps, and cosine decay for 100 epochs (5,600 steps).
 
-![LVSM curves](images/q2_curves.png)
+![LVSM training curves](images/q2_curves.png)
 
-Validation visualization during training (epoch 95). Columns: source views, ground truth, prediction.
+**Training visualization (epoch 95).** Panels are arranged left to right as **source views**, **ground truth**, and **prediction**.
 
 ![LVSM training visualization](images/q2_train_vis.png)
 
-Validation metrics for `best.pt`:
+**Validation metrics (`best.pt`)**
 
 | Source views | Conditioning | PSNR | SSIM |
-|---|---|---|---|
-| 1 | correct | 15.19 | 0.5579 |
-| 1 | shuffled | 11.80 | 0.4871 |
-| 1 | none | 12.48 | 0.5300 |
-| 2 | correct | 16.13 | 0.5599 |
-| 2 | shuffled | 11.50 | 0.4719 |
-| 2 | none | 12.45 | 0.5276 |
-| 4 | correct | 16.88 | 0.5753 |
-| 4 | shuffled | 11.59 | 0.4728 |
-| 4 | none | 12.47 | 0.5364 |
+|---:|---|---:|---:|
+| 1 | Correct rays | 15.19 | 0.5579 |
+| 1 | Shuffled rays | 11.80 | 0.4871 |
+| 1 | No rays | 12.48 | 0.5300 |
+| 2 | Correct rays | 16.13 | 0.5599 |
+| 2 | Shuffled rays | 11.50 | 0.4719 |
+| 2 | No rays | 12.45 | 0.5276 |
+| 4 | Correct rays | 16.88 | 0.5753 |
+| 4 | Shuffled rays | 11.59 | 0.4728 |
+| 4 | No rays | 12.47 | 0.5364 |
 
-Evaluation visualizations (columns: source views, ground truth, prediction):
+**Evaluation visualizations.** Each image is ordered left to right as **source view(s)**, **ground truth**, and **prediction**.
 
-1 source view, correct rays:
+### 1 source view, correct rays
 
-![S1 correct](images/q2_eval_S1_correct.png)
+![One source view with correct rays](images/q2_eval_S1_correct.png)
 
-2 source views, correct rays:
+### 2 source views, correct rays
 
-![S2 correct](images/q2_eval_S2_correct.png)
+![Two source views with correct rays](images/q2_eval_S2_correct.png)
 
-4 source views, correct rays:
+### 4 source views, correct rays
 
-![S4 correct](images/q2_eval_S4_correct.png)
+![Four source views with correct rays](images/q2_eval_S4_correct.png)
 
-2 source views, shuffled rays:
+### 2 source views, shuffled rays
 
-![S2 shuffled](images/q2_eval_S2_shuffled.png)
+![Two source views with shuffled rays](images/q2_eval_S2_shuffled.png)
 
-2 source views, no rays:
+### 2 source views, no rays
 
-![S2 none](images/q2_eval_S2_none.png)
+![Two source views with no rays](images/q2_eval_S2_none.png)
 
-**Number of source views:** PSNR goes from 15.19 dB with 1 source to 16.13 dB with 2 and 16.88 dB with 4, although the model was only trained with 2. More sources cover more of the target view, so less of it has to be guessed.
+More source views improve performance with correct rays: PSNR rises from 15.19 (1 view) to 16.88 dB (4 views). Shuffled or zero target rays reduce PSNR by 2.7–5.3 dB, showing that the model uses the target-ray conditioning.
 
-**Ray conditioning:** With shuffled or zero target rays, PSNR drops by 2.7 to 5.3 dB (more with more sources) and more sources no longer help. The model really uses the target rays to decide what to render. With zero rays it outputs a flat average color of the scene, which scores a little higher than shuffled rays because shuffled rays render a blurry image of the wrong view.
+## 2.3 Bonus: Analysis and exploration
+
+Not attempted.
 
 # 3. Multi-View Geometry with Mini-VGGT
 
 ## 3.1 Overfitting
 
-![VGGT overfit loss](images/q3_overfit_loss.png)
+![VGGT overfit loss curve](images/q3_overfit_loss.png)
 
-![VGGT overfit geometry](images/q3_overfit_0.png)
+| Ground truth | Prediction |
+|---|---|
+| ![Overfit ground-truth geometry](images/q3_overfit_0_gt.png) | ![Overfit predicted geometry](images/q3_overfit_0_pred.png) |
 
 ## 3.2 Training and evaluation
 
-**Training settings:** Default `configs/vggt.json`: frozen DINOv2 ViT-B/14, 8 frame/global block pairs (width 384, 6 heads), 8 views from a 32-frame window, 224px, batch size 16, AdamW with lr 6e-4, weight decay 0.01, 10 warmup epochs and cosine decay to 5% of the peak lr, loss weights camera 5 and depth 1, 1000 epochs (14,000 steps). Training took about 3.8 hours on one H100. `best.pt` is from epoch 788.
+**Training settings:** frozen DINOv2 ViT-B/14, 8 frame/global block pairs (width 384, 6 heads), 8 views from a 32-frame window, 224px images, and batch size 16. AdamW used `lr=6e-4`, weight decay `0.01`, 10 warmup epochs, and cosine decay; camera/depth loss weights were 5/1. Training ran for 1,000 epochs (14,000 steps); `best.pt` is from epoch 788.
 
-![VGGT training loss](images/q3_train_loss.png)
+![VGGT training loss curve](images/q3_train_loss.png)
 
-Metrics for `best.pt` (8 views from the first 32 prepared frames, 224px, seed 825):
+**Metrics (`best.pt`):** 8 views sampled from the first 32 prepared frames at 224px with seed 825.
 
-| Metric | Val | Test |
-|---|---|---|
+| Metric | Validation | Test |
+|---|---:|---:|
 | Depth AbsRel | 0.1413 | 0.1566 |
 | Depth δ1 | 0.8316 | 0.8022 |
 | Rotation AUC@5 | 0.2099 | 0.1959 |
@@ -138,14 +143,32 @@ Metrics for `best.pt` (8 views from the first 32 prepared frames, 224px, seed 82
 | Joint pose AUC@15 | 0.0637 | 0.0305 |
 | Joint pose AUC@30 | 0.1734 | 0.1226 |
 
-GT and predicted geometry on four validation scenes:
+### Validation scene 1
 
-![val scene 0](images/q3_val_0.png)
+| Ground truth | Prediction |
+|---|---|
+| ![Validation scene 1 ground truth](images/q3_val_0_gt.png) | ![Validation scene 1 prediction](images/q3_val_0_pred.png) |
 
-![val scene 1](images/q3_val_1.png)
+### Validation scene 2
 
-![val scene 2](images/q3_val_2.png)
+| Ground truth | Prediction |
+|---|---|
+| ![Validation scene 2 ground truth](images/q3_val_1_gt.png) | ![Validation scene 2 prediction](images/q3_val_1_pred.png) |
 
-![val scene 3](images/q3_val_3.png)
+### Validation scene 3
 
-**Errors on held-out scenes:** Depth transfers well to new scenes (AbsRel about 0.15, δ1 about 0.8) and the room layout is recovered. Most of the error is in the cameras. Rotation is reasonable (AUC@30 about 0.7), but translation direction is poor (AUC@30 0.14–0.20), likely because the 8 views come from a 32-frame window and the short baselines make the direction ambiguous. Wrong poses make surfaces from different views misalign (scene 280b83fcf3). Predicted depth is smoother than GT and loses thin structures such as chair legs.
+| Ground truth | Prediction |
+|---|---|
+| ![Validation scene 3 ground truth](images/q3_val_2_gt.png) | ![Validation scene 3 prediction](images/q3_val_2_pred.png) |
+
+### Validation scene 4
+
+| Ground truth | Prediction |
+|---|---|
+| ![Validation scene 4 ground truth](images/q3_val_3_gt.png) | ![Validation scene 4 prediction](images/q3_val_3_pred.png) |
+
+Depth generalizes reasonably well, but camera translation is the main failure mode. Translation errors misalign points across views, and predicted depth is smoother than ground truth, especially on thin structures.
+
+## 3.3 Bonus: Analysis and exploration
+
+Not attempted.
