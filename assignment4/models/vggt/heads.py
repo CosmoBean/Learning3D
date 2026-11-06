@@ -1,11 +1,10 @@
 """Q3.0: Camera and dense depth/confidence prediction heads."""
 
-# ruff: noqa: F841, RUF059
 
 import math
 
 import torch
-import torch.nn.functional as F  # noqa: F401 -- used by the student TODOs
+import torch.nn.functional as F
 from torch import nn
 
 from models.vggt.attention import GeometryBlock
@@ -102,7 +101,7 @@ class DepthHead(nn.Module):
         dense = patches_to_image(self.dense(patches), (h, w), p, self.channels)
         # TODO (Q3.0): Add self.refine([dense, rgb]) as a dense residual.
         # Flatten B,V before Conv2d, then restore them.
-        residual = self.refine(torch.cat([dense, rgb.to(dense.dtype)], 2).flatten(0, 1))
+        residual = self.refine(torch.cat([dense, rgb], 2).flatten(0, 1))
         refined = dense + residual.reshape(b, v, self.channels, h, w)
         # TODO (Q3.0): Project confidence, reconstruct its map, and activate
         # depth/confidence.

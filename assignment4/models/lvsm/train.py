@@ -4,7 +4,6 @@
     python -m models.lvsm.train --overfit        # sanity check: memorize one batch
 """
 
-# ruff: noqa: F841
 
 import argparse
 import json
@@ -16,7 +15,7 @@ import torch
 
 from a4data.dataset import lvsm_inputs, lvsm_targets
 from models.lvsm.eval import evaluate
-from models.lvsm.losses import compute_loss  # noqa: F401 -- used in TODOs
+from models.lvsm.losses import compute_loss
 from models.lvsm.metrics import psnr
 from models.lvsm.utils import (
     build_model,

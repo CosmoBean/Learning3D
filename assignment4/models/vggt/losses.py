@@ -5,12 +5,11 @@ confidence-based pixel selection is applied before computing the loss.
 Fill the None placeholders and remove the corresponding NotImplementedError.
 """
 
-# ruff: noqa: F841
 
 import torch
 
 from models.vggt.camera import pose_encoding
-from models.vggt.loss_utils import trimmed_mean  # noqa: F401 -- used in TODOs
+from models.vggt.loss_utils import trimmed_mean
 
 DEFAULT_WEIGHTS = {"camera": 5.0, "depth": 1.0}
 

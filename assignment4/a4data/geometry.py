@@ -11,9 +11,6 @@ Geometry functions return channel-last maps; the provided pipeline converts
 them to channel-first maps for the dataloader.
 """
 
-# TODO intermediate variables are intentionally unused until implemented.
-# ruff: noqa: F841, RUF059
-
 import torch
 
 from a4data.scale import compute_scene_scale
@@ -133,9 +130,9 @@ def canonicalize_cameras(
     # Keep camera 0 at the origin; do not subtract the point-cloud centroid.
     poses_normalized = poses_relative.clone()  # (V, 4, 4)
     poses_normalized[:, :3, 3] /= scene_scale
-    depth_normalized = torch.where(depth_valid, depth / scene_scale, 0)  # (V, 1, H, W)
-    valid = depth_valid[:, 0, :, :, None]
-    points_normalized = torch.where(valid, points_reference / scene_scale, 0)  # (V, H, W, 3)
+    depth_normalized = depth / scene_scale  # (V, 1, H, W), invalid depth is already zero
+    valid = depth_valid.permute(0, 2, 3, 1)  # (V, H, W, 1)
+    points_normalized = torch.where(valid, points_reference / scene_scale, 0)
 
     return (
         poses_normalized,

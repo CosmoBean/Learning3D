@@ -3,9 +3,8 @@
 Fill the None placeholder and remove the NotImplementedError.
 """
 
-# ruff: noqa: F841
 
-import torch.nn.functional as F  # noqa: F401 -- used in TODOs
+import torch.nn.functional as F
 
 
 def view_synthesis_loss(pred_rgb, target_rgb):

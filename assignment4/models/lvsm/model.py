@@ -16,7 +16,6 @@ Symbols: B batch, S source views, T target views, H/W image size, p patch size,
 N = (H/p)*(W/p) patches per view, D transformer width.
 """
 
-# ruff: noqa: F841
 
 import math
 
@@ -216,7 +215,7 @@ class MiniLVSM(nn.Module):
         """
         b, s, n, d = source_tokens.shape
         t = target_tokens.shape[1]
-        grid = int(math.isqrt(n))
+        grid = math.isqrt(n)
         # TODO (Q2.0): Build the (N, D) positional embedding for the grid x grid
         # patch layout with sincos_2d_pos_embed, matching the tokens' device/dtype.
         pos = sincos_2d_pos_embed(

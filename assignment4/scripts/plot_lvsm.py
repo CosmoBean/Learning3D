@@ -5,7 +5,8 @@ import sys
 import matplotlib.pyplot as plt
 
 log, out = sys.argv[1:]
-rows = [json.loads(line) for line in open(log)]
+with open(log) as f:
+    rows = [json.loads(line) for line in f]
 epochs = [r["epoch"] for r in rows]
 fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 for ax, key, title in zip(axes, ["loss", "psnr", "ssim"], ["MSE loss", "PSNR (dB)", "SSIM"]):
