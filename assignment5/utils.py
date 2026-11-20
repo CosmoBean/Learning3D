@@ -2,6 +2,7 @@ import os
 import torch
 import numpy as np
 import pytorch3d
+import pytorch3d.transforms
 from pytorch3d.renderer import (
     AlphaCompositor,
     PointsRasterizationSettings,
@@ -53,14 +54,12 @@ def get_points_renderer(
     return renderer
 
 
-def viz_seg (verts, labels, path, device):
+def render_360(verts, colors, path, device):
     """
-    visualize segmentation result
-    output: a 360-degree gif
+    render a point cloud with per-point colors (N, 3) as a 360-degree gif
     """
     image_size=256
     background_color=(1, 1, 1)
-    colors = [[1.0,1.0,1.0], [1.0,0.0,1.0], [0.0,1.0,1.0],[1.0,1.0,0.0],[0.0,0.0,1.0], [1.0,0.0,0.0]]
 
     # Construct various camera viewpoints
     dist = 3
@@ -70,14 +69,7 @@ def viz_seg (verts, labels, path, device):
     c = pytorch3d.renderer.FoVPerspectiveCameras(R=R, T=T, fov=60, device=device)
 
     sample_verts = verts.unsqueeze(0).repeat(30,1,1).to(torch.float)
-    sample_labels = labels.unsqueeze(0)
-    sample_colors = torch.zeros((1, verts.shape[0], 3))
-
-    # Colorize points based on segmentation labels
-    for i in range(6):
-        sample_colors[sample_labels==i] = torch.tensor(colors[i])
-
-    sample_colors = sample_colors.repeat(30,1,1).to(torch.float)
+    sample_colors = colors.unsqueeze(0).repeat(30,1,1).to(torch.float)
 
     point_cloud = pytorch3d.structures.Pointclouds(points=sample_verts, features=sample_colors).to(device)
 
@@ -85,5 +77,29 @@ def viz_seg (verts, labels, path, device):
     rend = renderer(point_cloud, cameras=c).cpu().numpy() # (30, 256, 256, 3)
     rend = (rend * 255).astype(np.uint8)
 
-    imageio.mimsave(path, rend, fps=15)
+    imageio.mimsave(path, rend, fps=15, loop=0)
 
+
+def viz_cls (verts, path, device):
+    """
+    visualize a point cloud in a single color
+    output: a 360-degree gif
+    """
+    render_360(verts, torch.tensor([0.2, 0.4, 0.8]).expand(verts.shape[0], 3), path, device)
+
+
+def viz_seg (verts, labels, path, device):
+    """
+    visualize segmentation result
+    output: a 360-degree gif
+    """
+    colors = torch.tensor([[1.0,1.0,1.0], [1.0,0.0,1.0], [0.0,1.0,1.0],[1.0,1.0,0.0],[0.0,0.0,1.0], [1.0,0.0,0.0]])
+    render_360(verts, colors[labels.cpu()], path, device)
+
+
+def rotate(points, degrees):
+    """
+    rotate point clouds (B, N, 3) about the z axis, which tilts the upright (y-up) objects
+    """
+    R = pytorch3d.transforms.euler_angles_to_matrix(torch.tensor([0.0, 0.0, np.deg2rad(degrees)]), "XYZ")
+    return points @ R.T.to(points)

@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from models import cls_model, seg_model
+from models import cls_model, seg_model, cls_pp_model, seg_pp_model
 from data_loader import get_data_loader
 from utils import save_checkpoint, create_dir
 
@@ -19,8 +19,13 @@ def train(train_dataloader, model, opt, epoch, args, writer):
         point_clouds = point_clouds.to(args.device)
         labels = labels.to(args.device).to(torch.long)
 
-        # ------ TO DO: Forward Pass ------
-        predictions = 
+        # Shuffle point order so PointNet++ (FPS start, ball query) does not depend on the stored order
+        perm = torch.randperm(point_clouds.shape[1], device=args.device)
+        point_clouds = point_clouds[:, perm]
+        if (args.task == "seg"):
+            labels = labels[:, perm]
+
+        predictions = model(point_clouds)
 
         if (args.task == "seg"):
             labels = labels.reshape([-1])
@@ -29,7 +34,7 @@ def train(train_dataloader, model, opt, epoch, args, writer):
         # Compute Loss
         criterion = torch.nn.CrossEntropyLoss()
         loss = criterion(predictions, labels)
-        epoch_loss += loss
+        epoch_loss += loss.item()
 
         # Backward and Optimize
         opt.zero_grad()
@@ -53,9 +58,8 @@ def test(test_dataloader, model, epoch, args, writer):
             point_clouds = point_clouds.to(args.device)
             labels = labels.to(args.device).to(torch.long)
 
-            # ------ TO DO: Make Predictions ------
             with torch.no_grad():
-                pred_labels = 
+                pred_labels = model(point_clouds).argmax(-1)
             correct_obj += pred_labels.eq(labels.data).cpu().sum().item()
             num_obj += labels.size()[0]
 
@@ -72,9 +76,8 @@ def test(test_dataloader, model, epoch, args, writer):
             point_clouds = point_clouds.to(args.device)
             labels = labels.to(args.device).to(torch.long)
 
-            # ------ TO DO: Make Predictions ------
-            with torch.no_grad():     
-                pred_labels = 
+            with torch.no_grad():
+                pred_labels = model(point_clouds).argmax(-1)
 
             correct_point += pred_labels.eq(labels.data).cpu().sum().item()
             num_point += labels.view([-1,1]).size()[0]
@@ -97,11 +100,10 @@ def main(args):
     # Tensorboard Logger
     writer = SummaryWriter('./logs/{0}'.format(args.task+"_"+args.exp_name))
 
-    # ------ TO DO: Initialize Model ------
     if args.task == "cls":
-        model = 
+        model = (cls_pp_model if args.pp else cls_model)(args.num_cls_class).to(args.device)
     else:
-        model = 
+        model = (seg_pp_model if args.pp else seg_model)(args.num_seg_class).to(args.device)
     
     # Load Checkpoint 
     if args.load_checkpoint:
@@ -156,7 +158,9 @@ def create_parser():
 
     # Model & Data hyper-parameters
     parser.add_argument('--task', type=str, default="cls", help='The task: cls or seg')
+    parser.add_argument('--num_cls_class', type=int, default=3, help='The number of classes')
     parser.add_argument('--num_seg_class', type=int, default=6, help='The number of segmentation classes')
+    parser.add_argument('--pp', action='store_true', help='Use PointNet++ instead of PointNet')
 
     # Training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=250)
@@ -181,6 +185,6 @@ if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
     args.device = torch.device("cuda" if torch.cuda.is_available() else 'cpu')
-    args.checkpoint_dir = args.checkpoint_dir+"/"+args.task # checkpoint directory is task specific
+    args.checkpoint_dir = args.checkpoint_dir+"/"+args.task+("_pp" if args.pp else "") # checkpoint directory is task specific
 
     main(args)
