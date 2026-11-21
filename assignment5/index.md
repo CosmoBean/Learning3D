@@ -126,3 +126,10 @@ Test accuracy: **90.49%**
 | 351 | ![](images/gt_q2_351.gif) | ![](images/pred_q2_351.gif) 47.44% | ![](images/pred_pp_351.gif) 49.51% |
 
 PointNet++ makes 16 classification errors instead of 24 and classifies the column lamp correctly. In segmentation, local features give cleaner part boundaries. In chair 9 the base is labelled as legs and the seat is a thin layer, instead of a thick band of seat labels. Chair 351 is still wrong, because its bottom has no local shape that separates it from legs.
+
+# References
+
+1. C. R. Qi, H. Su, K. Mo, L. J. Guibas. PointNet: Deep Learning on Point Sets for 3D Classification and Segmentation. CVPR 2017. [arXiv:1612.00593](https://arxiv.org/abs/1612.00593), code: [charlesq34/pointnet](https://github.com/charlesq34/pointnet)
+2. C. R. Qi, L. Yi, H. Su, L. J. Guibas. PointNet++: Deep Hierarchical Feature Learning on Point Sets in a Metric Space. NeurIPS 2017. [arXiv:1706.02413](https://arxiv.org/abs/1706.02413), code: [charlesq34/pointnet2](https://github.com/charlesq34/pointnet2)
+3. N. Ravi, J. Reizenstein, D. Novotny, T. Gordon, W.-Y. Lo, J. Johnson, G. Gkioxari. Accelerating 3D Deep Learning with PyTorch3D. arXiv 2020. [arXiv:2007.08501](https://arxiv.org/abs/2007.08501), code: [facebookresearch/pytorch3d](https://github.com/facebookresearch/pytorch3d) (farthest point sampling, ball query and kNN ops)
+4. Course starter code: [learning3d/assignment5](https://github.com/learning3d/assignment5)
